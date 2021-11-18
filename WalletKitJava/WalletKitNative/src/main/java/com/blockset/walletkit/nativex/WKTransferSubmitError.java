@@ -227,13 +227,9 @@ public class WKTransferSubmitError extends Structure {
         return Arrays.asList("details", "type");
     }
 
-    public static class ByReference extends WKTransferSubmitError implements Structure.ByReference {
+    public static class ByReference extends WKTransferSubmitError implements Structure.ByReference {}
 
-    }
-
-    public static class ByValue extends WKTransferSubmitError implements Structure.ByValue {
-
-    }
+    public static class ByValue extends WKTransferSubmitError implements Structure.ByValue {}
 /*
     public int typeEnum;
     public u_union u;

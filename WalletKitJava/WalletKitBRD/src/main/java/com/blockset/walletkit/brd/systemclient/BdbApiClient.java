@@ -458,7 +458,7 @@ public class BdbApiClient {
 
                 // if anything goes wrong, make sure we report as an error
                 if (error != null) {
-                    Log.log(Level.SEVERE, String.format ("response failed with error: '%s'", error.getLocalizedMessage()));
+                    Log.log(Level.SEVERE, String.format ("response failed with error: '%s'", error));
                     handler.handleError(error);
                 } else {
                     handler.handleData(data);
