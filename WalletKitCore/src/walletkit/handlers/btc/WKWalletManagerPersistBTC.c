@@ -9,6 +9,7 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 #include "WKBTC.h"
+#include "bitcoin/BTCLog.h"
 #include "walletkit/WKFileService.h"
 
 
@@ -82,7 +83,7 @@ initialTransactionsLoadBTC (WKWalletManager manager) {
     BRSetOf(BRBitcoinTransaction*) transactionSet = BRSetNew(btcTransactionHash, btcTransactionEq, 100);
     if (1 != fileServiceLoad (manager->fileService, transactionSet, FILE_SERVICE_TYPE_TRANSACTION, 1)) {
         BRSetFreeAll(transactionSet, (void (*) (void*)) btcTransactionFree);
-        _peer_log ("BWM: failed to load transactions");
+        LOG (LL_ERROR, BTC_BWM, "failed to load transactions");
         return NULL;
     }
 
@@ -95,7 +96,7 @@ initialTransactionsLoadBTC (WKWalletManager manager) {
     BRSetAll(transactionSet, (void**) transactions, transactionsCount);
     BRSetFree(transactionSet);
 
-    _peer_log ("BWM: %4s: loaded %4zu transactions\n",
+    LOG (LL_INFO, BTC_BWM, "%4s: loaded %4zu transactions\n",
                wkNetworkTypeGetCurrencyCode (manager->type),
                transactionsCount);
     return transactions;
@@ -170,7 +171,7 @@ initialBlocksLoadBTC (WKWalletManager manager) {
     BRSetOf(BRMerkleBlock*) blockSet = BRSetNew(btcMerkleBlockHash, btcMerkleBlockEq, 100);
     if (1 != fileServiceLoad (manager->fileService, blockSet, fileServiceTypeBlocksBTC, 1)) {
         BRSetFreeAll(blockSet, (void (*) (void*)) btcMerkleBlockFree);
-        _peer_log ("BWM: %4s: failed to load blocks",
+        LOG (LL_ERROR, BTC_BWM, "%4s: failed to load blocks",
                    wkNetworkTypeGetCurrencyCode (manager->type));
         return NULL;
     }
@@ -184,7 +185,7 @@ initialBlocksLoadBTC (WKWalletManager manager) {
     BRSetAll(blockSet, (void**) blocks, blocksCount);
     BRSetFree(blockSet);
 
-    _peer_log ("BWM: %4s: loaded %4zu blocks\n",
+    LOG (LL_INFO, BTC_BWM, "%4s: loaded %4zu blocks\n",
                wkNetworkTypeGetCurrencyCode (manager->type),
                blocksCount);
     return blocks;
@@ -274,7 +275,7 @@ initialPeersLoadBTC (WKWalletManager manager) {
     BRSetOf(BRPeer*) peerSet = BRSetNew(btcPeerHash, btcPeerEq, 100);
     if (1 != fileServiceLoad (manager->fileService, peerSet, fileServiceTypePeersBTC, 1)) {
         BRSetFreeAll(peerSet, free);
-        _peer_log ("BWM: %4s: failed to load peers",
+        LOG (LL_ERROR, BTC_BWM, "%4s: failed to load peers",
                    wkNetworkTypeGetCurrencyCode (manager->type));
         return NULL;
     }
@@ -287,9 +288,9 @@ initialPeersLoadBTC (WKWalletManager manager) {
     FOR_SET (BRBitcoinPeer*, peer, peerSet) array_add (peers, *peer);
     BRSetFreeAll(peerSet, free);
 
-    _peer_log ("BWM: %4s: loaded %4zu peers\n",
-               wkNetworkTypeGetCurrencyCode (manager->type),
-               peersCount);
+    LOG (LL_INFO, BTC_BWM, "%4s: loaded %4zu peers\n",
+         wkNetworkTypeGetCurrencyCode (manager->type),
+         peersCount);
     return peers;
 }
 

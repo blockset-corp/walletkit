@@ -1,5 +1,5 @@
 //
-//  BREthereumLog.h
+//  WKLog.h
 //
 //  Created by Bryan Goring on 11/10/21.
 //  Copyright (c) 2021 breadwallet LLC.
@@ -22,16 +22,12 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef BREthereumLog_h
-#define BREthereumLog_h
+#ifndef WKLog_h
+#define WKLog_h
 
 // Declaration of the space of this module's logs
 #include "support/BRLog.h"
-LOG_DECLARE_MODULE(ETH);
-LOG_DECLARE_SUBMODULE(ETH,INIT);
-LOG_DECLARE_SUBMODULE(ETH,BCS);
-LOG_DECLARE_SUBMODULE(ETH,MEM);
-LOG_DECLARE_SUBMODULE(ETH,SHOW);
-LOG_DECLARE_SUBMODULE(ETH,LES);
+LOG_DECLARE_MODULE(WK);
+LOG_DECLARE_SUBMODULE(WK,CRY);
 
-#endif /* BREthereumLog_h */
+#endif /* WKLog_h */

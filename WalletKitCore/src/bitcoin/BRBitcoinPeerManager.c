@@ -27,6 +27,7 @@
 #include "support/BRSet.h"
 #include "support/BRArray.h"
 #include "support/BRInt.h"
+#include "BTCLog.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <inttypes.h>
@@ -401,7 +402,7 @@ static void _updateFilterPingDone(void *info, int success)
     
     if (success) {
         pthread_mutex_lock(&manager->lock);
-        peer_log(peer, "updating filter with newly created wallet addresses");
+        LOG_PEER (LL_INFO, peer, "updating filter with newly created wallet addresses");
         if (manager->bloomFilter) btcBloomFilterFree(manager->bloomFilter);
         manager->bloomFilter = NULL;
 
@@ -438,7 +439,7 @@ static void _btcPeerManagerUpdateFilter(BRBitcoinPeerManager *manager)
     if (manager->downloadPeer && (manager->downloadPeer->flags & PEER_FLAG_NEEDSUPDATE) == 0) {
         btcPeerSetNeedsFilterUpdate(manager->downloadPeer, 1);
         manager->downloadPeer->flags |= PEER_FLAG_NEEDSUPDATE;
-        peer_log(manager->downloadPeer, "filter update needed, waiting for pong");
+        LOG_PEER (LL_INFO, manager->downloadPeer, "filter update needed, waiting for pong");
         info = calloc(1, sizeof(*info));
         assert(info != NULL);
         info->peer = manager->downloadPeer;
@@ -488,7 +489,7 @@ static void _requestUnrelayedTxGetdataDone(void *info, int success)
             
             if (! isPublishing && _BRTxPeerListCount(manager->txRelays, hash) == 0 &&
                 _BRTxPeerListCount(manager->txRequests, hash) == 0) {
-                peer_log(peer, "removing tx unconfirmed at: %d, txHash: %s", manager->lastBlock->height, u256hex(hash));
+                LOG_PEER (LL_INFO, peer, "removing tx unconfirmed at: %d, txHash: %s", manager->lastBlock->height, u256hex(hash));
                 assert(tx[i - 1]->blockHeight == TX_UNCONFIRMED);
                 btcWalletRemoveTransaction(manager->wallet, hash);
             }
@@ -553,10 +554,10 @@ static void _mempoolDone(void *info, int success)
     free(info);
     
     if (success) {
-        peer_log(peer, "mempool request finished");
+        LOG_PEER (LL_INFO, peer, "mempool request finished");
         pthread_mutex_lock(&manager->lock);
         if (manager->syncStartHeight > 0) {
-            peer_log(peer, "sync succeeded");
+            LOG_PEER (LL_INFO, peer, "sync succeeded");
             syncFinished = 1;
             _btcPeerManagerSyncStopped(manager);
         }
@@ -567,7 +568,7 @@ static void _mempoolDone(void *info, int success)
         if (manager->txStatusUpdate) manager->txStatusUpdate(manager->info);
         if (syncFinished && manager->syncStopped) manager->syncStopped(manager->info, 0);
     }
-    else peer_log(peer, "mempool request failed");
+    else LOG_PEER (LL_INFO, peer, "mempool request failed");
 }
 
 static void _loadBloomFilterDone(void *info, int success)
@@ -586,7 +587,7 @@ static void _loadBloomFilterDone(void *info, int success)
         free(info);
         
         if (peer == manager->downloadPeer) {
-            peer_log(peer, "sync succeeded");
+            LOG_PEER (LL_INFO, peer, "sync succeeded");
             _btcPeerManagerSyncStopped(manager);
             pthread_mutex_unlock(&manager->lock);
             if (manager->syncStopped) manager->syncStopped(manager->info, 0);
@@ -730,19 +731,19 @@ static void _peerConnected(void *info)
     
     // TODO: XXX does this work with 0.11 pruned nodes?
     if ((peer->services & manager->params->services) != manager->params->services) {
-        peer_log(peer, "unsupported node type");
+        LOG_PEER (LL_INFO, peer, "unsupported node type");
         btcPeerDisconnect(peer);
     }
     else if ((peer->services & SERVICES_NODE_NETWORK) != SERVICES_NODE_NETWORK) {
-        peer_log(peer, "node doesn't carry full blocks");
+        LOG_PEER (LL_INFO, peer, "node doesn't carry full blocks");
         btcPeerDisconnect(peer);
     }
     else if (btcPeerLastBlock(peer) + 10 < manager->lastBlock->height) {
-        peer_log(peer, "node isn't synced");
+        LOG_PEER (LL_INFO, peer, "node isn't synced");
         btcPeerDisconnect(peer);
     }
     else if (btcPeerVersion(peer) >= 70011 && (peer->services & SERVICES_NODE_BLOOM) != SERVICES_NODE_BLOOM) {
-        peer_log(peer, "node doesn't support SPV mode");
+        LOG_PEER (LL_INFO, peer, "node doesn't support SPV mode");
         btcPeerDisconnect(peer);
     }
     else if (manager->downloadPeer && // check if we should stick with the existing download peer
@@ -772,7 +773,7 @@ static void _peerConnected(void *info)
         }
         
         if (manager->downloadPeer) {
-            peer_log(peer, "selecting new download peer with higher reported lastblock");
+            LOG_PEER (LL_INFO, peer, "selecting new download peer with higher reported lastblock");
             btcPeerDisconnect(manager->downloadPeer);
         }
         
@@ -859,14 +860,14 @@ static void _peerDisconnected(void *info, int error)
         array_clear(manager->peers);
         txError = ENOTCONN; // trigger any pending tx publish callbacks
         willSave = 1;
-        peer_log(peer, "sync failed");
+        LOG_PEER (LL_INFO, peer, "sync failed");
     }
     else if (manager->connectFailureCount < MAX_CONNECT_FAILURES) willReconnect = 1;
     
     if (txError) {
         for (size_t i = array_count(manager->publishedTx); i > 0; i--) {
             if (manager->publishedTx[i - 1].callback == NULL) continue;
-            peer_log(peer, "transaction canceled: %s", strerror(txError));
+            LOG_PEER (LL_INFO, peer, "transaction canceled: %s", strerror(txError));
             pubTx[txCount++] = manager->publishedTx[i - 1];
             manager->publishedTx[i - 1].callback = NULL;
             manager->publishedTx[i - 1].info = NULL;
@@ -899,7 +900,7 @@ static void _peerRelayedPeers(void *info, const BRBitcoinPeer peers[], size_t pe
     time_t now = time(NULL);
 
     pthread_mutex_lock(&manager->lock);
-    peer_log(peer, "relayed %zu peer(s)", peersCount);
+    LOG_PEER (LL_INFO, peer, "relayed %zu peer(s)", peersCount);
 
     array_add_array(manager->peers, peers, peersCount);
     qsort(manager->peers, array_count(manager->peers), sizeof(*manager->peers), _peerTimestampCompare);
@@ -932,7 +933,7 @@ static void _peerRelayedTx(void *info, BRBitcoinTransaction *tx)
     size_t relayCount = 0;
     
     pthread_mutex_lock(&manager->lock);
-    peer_log(peer, "relayed tx: %s", u256hex(tx->txHash));
+    LOG_PEER (LL_INFO, peer, "relayed tx: %s", u256hex(tx->txHash));
     
     for (size_t i = array_count(manager->publishedTx); i > 0; i--) { // see if tx is in list of published tx
         if (UInt256Eq(manager->publishedTxHashes[i - 1], tx->txHash)) {
@@ -1015,7 +1016,7 @@ static void _peerHasTx(void *info, UInt256 txHash)
     
     pthread_mutex_lock(&manager->lock);
     tx = btcWalletTransactionForHash(manager->wallet, txHash);
-    peer_log(peer, "has tx: %s", u256hex(txHash));
+    LOG_PEER (LL_INFO, peer, "has tx: %s", u256hex(txHash));
 
     for (size_t i = array_count(manager->publishedTx); i > 0; i--) { // see if tx is in list of published tx
         if (UInt256Eq(manager->publishedTxHashes[i - 1], txHash)) {
@@ -1065,7 +1066,7 @@ static void _peerRejectedTx(void *info, UInt256 txHash, uint8_t code)
     BRBitcoinTransaction *tx, *t;
 
     pthread_mutex_lock(&manager->lock);
-    peer_log(peer, "rejected tx: %s", u256hex(txHash));
+    LOG_PEER (LL_INFO, peer, "rejected tx: %s", u256hex(txHash));
     tx = btcWalletTransactionForHash(manager->wallet, txHash);
     _BRTxPeerListRemovePeer(manager->txRequests, txHash, peer);
 
@@ -1108,7 +1109,7 @@ static int _btcPeerManagerVerifyBlock(BRBitcoinPeerManager *manager, BRBitcoinMe
         }
 
         if (! b) {
-            peer_log(peer, "missing previous difficulty tansition, can't verify block: %s", u256hex(block->blockHash));
+            LOG_PEER (LL_INFO, peer, "missing previous difficulty tansition, can't verify block: %s", u256hex(block->blockHash));
             r = 0;
         }
         else prevBlock = b->prevBlock;
@@ -1126,7 +1127,7 @@ static int _btcPeerManagerVerifyBlock(BRBitcoinPeerManager *manager, BRBitcoinMe
 
     // verify block difficulty
     if (r && ! manager->params->verifyDifficulty(block, manager->blocks)) {
-        peer_log(peer, "relayed block with invalid difficulty target %x, blockHash: %s", block->target,
+        LOG_PEER (LL_INFO, peer, "relayed block with invalid difficulty target %x, blockHash: %s", block->target,
                  u256hex(block->blockHash));
         r = 0;
     }
@@ -1136,7 +1137,7 @@ static int _btcPeerManagerVerifyBlock(BRBitcoinPeerManager *manager, BRBitcoinMe
 
         // verify blockchain checkpoints
         if (checkpoint && ! btcMerkleBlockEq(block, checkpoint)) {
-            peer_log(peer, "relayed a block that differs from the checkpoint at height %"PRIu32", blockHash: %s, "
+            LOG_PEER (LL_INFO, peer, "relayed a block that differs from the checkpoint at height %"PRIu32", blockHash: %s, "
                      "expected: %s", block->height, u256hex(block->blockHash), u256hex(checkpoint->blockHash));
             r = 0;
         }
@@ -1147,8 +1148,11 @@ static int _btcPeerManagerVerifyBlock(BRBitcoinPeerManager *manager, BRBitcoinMe
 
 static void _peerRelayedBlockFailed (BRBitcoinMerkleBlock *blockToFree, BRBitcoinPeer *peer, const char *message) {
     if (NULL != blockToFree) btcMerkleBlockFree (blockToFree);
-    if (NULL != peer) peer_log (peer, "peerRelayedBlock: %s", message);
-    else _peer_log ("peerRelayedBlock: %s", message);
+    if (NULL != peer) {
+        LOG_PEER (LL_INFO, peer, "peerRelayedBlock: %s", message);
+    } else {
+        LOG (LL_INFO, BTC_PEER, "peerRelayedBlock: %s", message);
+    }
 
     // In debug builds, assert
     assert (0);
@@ -1218,7 +1222,7 @@ static void _peerRelayedBlock(void *info, BRBitcoinMerkleBlock *block)
         // false positive rate sanity check
         if (btcPeerConnectStatus(peer) == BRPeerStatusConnected &&
             manager->fpRate > BLOOM_DEFAULT_FALSEPOSITIVE_RATE*10.0) {
-            peer_log(peer, "bloom filter false positive rate %f too high after %"PRIu32" blocks, disconnecting...",
+            LOG_PEER (LL_INFO, peer, "bloom filter false positive rate %f too high after %"PRIu32" blocks, disconnecting...",
                      manager->fpRate, manager->lastBlock->height + 1 - manager->filterUpdateHeight);
             btcPeerDisconnect(peer);
         }
@@ -1243,7 +1247,7 @@ static void _peerRelayedBlock(void *info, BRBitcoinMerkleBlock *block)
         }
     }
     else if (! prev) { // block is an orphan
-        peer_log(peer, "relayed orphan block %s, previous %s, last block is %s, height %"PRIu32,
+        LOG_PEER (LL_INFO, peer, "relayed orphan block %s, previous %s, last block is %s, height %"PRIu32,
                  u256hex(block->blockHash), u256hex(block->prevBlock), u256hex(manager->lastBlock->blockHash),
                  manager->lastBlock->height);
         
@@ -1259,7 +1263,7 @@ static void _peerRelayedBlock(void *info, BRBitcoinMerkleBlock *block)
                 UInt256 *locators      = calloc (locatorsCount, sizeof(UInt256));
                 _btcPeerManagerBlockLocators (manager, locators, locatorsCount);
 
-                peer_log(peer, "calling getblocks");
+                LOG_PEER (LL_INFO, peer, "calling getblocks");
                 btcPeerSendGetblocks(peer, locators, locatorsCount, UINT256_ZERO);
 
                 if (NULL != locators) free (locators);
@@ -1270,14 +1274,14 @@ static void _peerRelayedBlock(void *info, BRBitcoinMerkleBlock *block)
         }
     }
     else if (! _btcPeerManagerVerifyBlock(manager, block, prev, peer)) { // block is invalid
-        peer_log(peer, "relayed invalid block");
+        LOG_PEER (LL_INFO, peer, "relayed invalid block");
         btcMerkleBlockFree(block);
         block = NULL;
         _btcPeerManagerPeerMisbehavin(manager, peer);
     }
     else if (UInt256Eq(block->prevBlock, manager->lastBlock->blockHash)) { // new block extends main chain
         if ((block->height % 500) == 0 || txCount > 0 || block->height >= btcPeerLastBlock(peer)) {
-            peer_log(peer, "adding block #%"PRIu32", false positive rate: %f", block->height, manager->fpRate);
+            LOG_PEER (LL_INFO, peer, "adding block #%"PRIu32", false positive rate: %f", block->height, manager->fpRate);
         }
         
         BRSetAdd(manager->blocks, block);
@@ -1301,7 +1305,7 @@ static void _peerRelayedBlock(void *info, BRBitcoinMerkleBlock *block)
     }
     else if (BRSetContains(manager->blocks, block)) { // we already have the block (or at least the header)
         if ((block->height % 500) == 0 || txCount > 0 || block->height >= btcPeerLastBlock(peer)) {
-            peer_log(peer, "relayed existing block #%"PRIu32, block->height);
+            LOG_PEER (LL_INFO, peer, "relayed existing block #%"PRIu32, block->height);
         }
         
         b = manager->lastBlock;
@@ -1322,12 +1326,12 @@ static void _peerRelayedBlock(void *info, BRBitcoinMerkleBlock *block)
     }
     else if (manager->lastBlock->height < btcPeerLastBlock(peer) &&
              block->height > manager->lastBlock->height + 1) { // special case, new block mined durring rescan
-        peer_log(peer, "marking new block #%"PRIu32" as orphan until rescan completes", block->height);
+        LOG_PEER (LL_INFO, peer, "marking new block #%"PRIu32" as orphan until rescan completes", block->height);
         BRSetAdd(manager->orphans, block); // mark as orphan til we're caught up
         manager->lastOrphan = block;
     }
     else { // new block is on a fork
-        peer_log(peer, "chain fork reached height %"PRIu32, block->height);
+        LOG_PEER (LL_INFO, peer, "chain fork reached height %"PRIu32, block->height);
         BRSetAdd(manager->blocks, block);
         // The `block` has been added to `manager->blocks`; do not free.
 
@@ -1345,7 +1349,7 @@ static void _peerRelayedBlock(void *info, BRBitcoinMerkleBlock *block)
                 _peerRelayedBlockFailed (NULL, peer, "In 'on a fork' missed 'b'");
                 return;
             }
-            peer_log(peer, "reorganizing chain from height %"PRIu32", new height is %"PRIu32, b->height, block->height);
+            LOG_PEER (LL_INFO, peer, "reorganizing chain from height %"PRIu32", new height is %"PRIu32, b->height, block->height);
         
             btcWalletSetTxUnconfirmedAfter(manager->wallet, b->height); // mark tx after the join point as unconfirmed
 
@@ -1451,7 +1455,7 @@ static void _peerSetFeePerKb(void *info, uint64_t feePerKb)
     
     if (secondFeePerKb*3/2 > DEFAULT_FEE_PER_KB && secondFeePerKb*3/2 <= MAX_FEE_PER_KB &&
         secondFeePerKb*3/2 > btcWalletFeePerKb(manager->wallet)) {
-        peer_log(peer, "increasing feePerKb to %"PRIu64" based on feefilter messages from peers", secondFeePerKb*3/2);
+        LOG_PEER (LL_INFO, peer, "increasing feePerKb to %"PRIu64" based on feefilter messages from peers", secondFeePerKb*3/2);
         btcWalletSetFeePerKb(manager->wallet, secondFeePerKb*3/2);
     }
 
@@ -1548,8 +1552,8 @@ BRBitcoinPeerManager *btcPeerManagerNew(const BRBitcoinChainParams *params, BRBi
         if (i == 0 || block->timestamp + 7*24*60*60 < manager->earliestKeyTime) manager->lastBlock = block;
     }
 
-    _peer_log("BPM: checkpoint found with %u last block height\n",
-              (manager->lastBlock ? manager->lastBlock->height : (uint32_t) -1));
+    LOG (LL_INFO, BTC_BPM, "checkpoint found with %u last block height\n",
+         (manager->lastBlock ? manager->lastBlock->height : (uint32_t) -1));
 
     block = NULL;
     
@@ -1570,7 +1574,7 @@ BRBitcoinPeerManager *btcPeerManagerNew(const BRBitcoinChainParams *params, BRBi
         block = BRSetGet(manager->orphans, &orphan);
     }
 
-    _peer_log("BPM: initialized with %u last block height\n", manager->lastBlock->height);
+    LOG (LL_INFO, BTC_BPM, "initialized with %u last block height\n", manager->lastBlock->height);
 
     array_new(manager->txRelays, 10);
     array_new(manager->txRequests, 10);
@@ -1775,7 +1779,7 @@ static int _btcPeerManagerRescan(BRBitcoinPeerManager *manager, BRBitcoinMerkleB
     if (NULL == newLastBlock) return 0;
 
     manager->lastBlock = newLastBlock;
-    _peer_log("BPM: rescanning with %u last block height", manager->lastBlock->height);
+    LOG (LL_INFO, BTC_BPM, "rescanning with %u last block height", manager->lastBlock->height);
 
     if (manager->downloadPeer) { // disconnect the current download peer so a new random one will be selected
         for (size_t i = array_count(manager->peers); i > 0; i--) {

@@ -33,22 +33,6 @@
 #include <stddef.h>
 #include <inttypes.h>
 
-#define peer_log(peer, ...) _peer_log("%s:%"PRIu16" " _va_first(__VA_ARGS__, NULL) "\n", btcPeerHost(peer),\
-                                      (peer)->port, _va_rest(__VA_ARGS__, NULL))
-#define _va_first(first, ...) first
-#define _va_rest(first, ...) __VA_ARGS__
-
-#if defined(TARGET_OS_MAC)
-#include <Foundation/Foundation.h>
-#define _peer_log(...) NSLog(__VA_ARGS__)
-#elif defined(__ANDROID__)
-#include <android/log.h>
-#define _peer_log(...) __android_log_print(ANDROID_LOG_INFO, "bread", __VA_ARGS__)
-#else
-#include <stdio.h>
-#define _peer_log(...) printf(__VA_ARGS__)
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

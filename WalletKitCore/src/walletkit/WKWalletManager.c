@@ -226,6 +226,16 @@ wkWalletManagerInitialTransactionBundlesRecover (WKWalletManager manager) {
     }
 }
 
+#define MACRO_GENERATION
+#include "WKLog.h"
+
+static pthread_once_t initWKLogsOnce = PTHREAD_ONCE_INIT;
+static void initializeWalletKitLogs() {
+    LOG_REGISTER_MODULE(WK);
+    LOG_ADD_SUBMODULE(WK,CRY);
+}
+
+
 extern WKWalletManager
 wkWalletManagerAllocAndInit (size_t sizeInBytes,
                                  WKNetworkType type,
@@ -241,6 +251,8 @@ wkWalletManagerAllocAndInit (size_t sizeInBytes,
     assert (sizeInBytes >= sizeof (struct WKWalletManagerRecord));
     assert (type == wkNetworkGetType(network));
 
+    pthread_once (&initWKLogsOnce, initializeWalletKitLogs);
+    
     WKWalletManager manager = calloc (1, sizeInBytes);
     if (NULL == manager) return NULL;
 
@@ -382,7 +394,6 @@ wkWalletManagerCreate (WKWalletManagerListener listener,
     return manager;
 }
 
-#define _peer_log_x printf
 static void
 wkWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
                                             BRFileService fs,
@@ -390,31 +401,30 @@ wkWalletManagerFileServiceErrorHandler (BRFileServiceContext context,
     switch (error.type) {
         case FILE_SERVICE_IMPL:
             // This actually a FATAL - an unresolvable coding error.
-            _peer_log_x ("CRY: FileService Error: IMPL: %s\n", error.u.impl.reason);
+            LOG (LL_FATAL, WK_CRY, "FileService Error: IMPL: %s\n", error.u.impl.reason);
             break;
         case FILE_SERVICE_UNIX:
-            _peer_log_x ("CRY: FileService Error: UNIX: %s\n", strerror(error.u.unx.error));
+            LOG (LL_ERROR, WK_CRY, "FileService Error: UNIX: %s", strerror(error.u.unx.error));
             break;
         case FILE_SERVICE_ENTITY:
             // This is likely a coding error too.
-            _peer_log_x ("CRY: FileService Error: ENTITY (%s): %s\n",
-                     error.u.entity.type,
-                     error.u.entity.reason);
+            LOG (LL_ERROR, WK_CRY, "FileService Error: ENTITY (%s): %s",
+                 error.u.entity.type,
+                 error.u.entity.reason);
             break;
         case FILE_SERVICE_SDB:
-            _peer_log_x ("CRY: FileService Error: SDB: (%d): %s\n",
-                       error.u.sdb.code,
-                       error.u.sdb.reason);
+            LOG (LL_ERROR, WK_CRY, "FileService Error: SDB: (%d): %s",
+                 error.u.sdb.code,
+                 error.u.sdb.reason);
             break;
     }
-    _peer_log_x ("CRY: FileService Error: FORCED SYNC%s\n", "");
+    LOG (LL_ERROR, WK_CRY, "FileService Error: FORCED SYNC");
 
     // BRWalletManager bwm = (BRWalletManager) context;
     // TODO(fix): What do we actually want to happen here?
     // if (NULL != bwm->peerManager)
     //     btcPeerManagerRescan (bwm->peerManager);
 }
-#undef _peer_log_x
 
 
 static void

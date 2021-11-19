@@ -19,11 +19,14 @@
 #if defined(TARGET_OS_MAC)
 #  include <Foundation/Foundation.h>
 #  define _oslog(...) NSLog(__VA_ARGS__)
+#define TV_USEC_FMT "d"
 #elif defined(__ANDROID__)
 #  include <android/log.h>
 #  define _oslog(...) __android_log_print(ANDROID_LOG_INFO, "WalletKit", __VA_ARGS__)
+#define TV_USEC_FMT "ld"
 #else
 #  define _oslog(...) printf(__VA_ARGS__)
+#define TV_USEC_FMT "d"
 #endif
 
 #define MAX_LEVEL_DESC_LEN  (4)
@@ -149,7 +152,7 @@ void doLog(
     gettimeofday (&tv, NULL);
     snprintf(occursOn, 
              MAX_OCCURS_ON_LEN + 1, 
-             "%02d:%02d:%02d.%03d",
+             "%02d:%02d:%02d.%03" TV_USEC_FMT,
              local.tm_hour,
              local.tm_min,
              local.tm_sec,

@@ -120,14 +120,14 @@ messageP2PHelloShow (const BREthereumP2PMessageHello *hello) {
     char nodeId[nodeIdLen];
     hexEncode(nodeId, nodeIdLen, hello->nodeId.u8, sizeof (hello->nodeId.u8));
 
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Hello%s", "");
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    Version     : %" PRIu64, hello->version);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    ClientId    : %s",   hello->clientId);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    ListenPort  : %" PRIu64, hello->port);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    NodeId      : 0x%s", nodeId);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    Capabilities:%s", "");
+    LOG (LL_INFO, ETH_LES, "Hello%s", "");
+    LOG (LL_INFO, ETH_LES, "    Version     : %" PRIu64, hello->version);
+    LOG (LL_INFO, ETH_LES, "    ClientId    : %s",   hello->clientId);
+    LOG (LL_INFO, ETH_LES, "    ListenPort  : %" PRIu64, hello->port);
+    LOG (LL_INFO, ETH_LES, "    NodeId      : 0x%s", nodeId);
+    LOG (LL_INFO, ETH_LES, "    Capabilities:%s", "");
     for (size_t index = 0; index < array_count(hello->capabilities); index++)
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "        %s = %u",
+        LOG (LL_INFO, ETH_LES, "        %s = %u",
              hello->capabilities[index].name,
              hello->capabilities[index].version);
 }
@@ -343,50 +343,50 @@ messageP2PStatusShow(BREthereumP2PMessageStatus *message) {
 
     BREthereumP2PMessageStatusValue value;
 
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "StatusMessage:%s", "");
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    ProtocolVersion: %" PRIu64, message->protocolVersion);
+    LOG (LL_INFO, ETH_LES, "StatusMessage:%s", "");
+    LOG (LL_INFO, ETH_LES, "    ProtocolVersion: %" PRIu64, message->protocolVersion);
     if (messageP2PStatusExtractValue(message, P2P_MESSAGE_STATUS_ANNOUNCE_TYPE, &value))
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    AnnounceType   : %" PRIu64, value.u.integer);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    NetworkId      : %" PRIu64, message->chainId);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    HeadNum        : %" PRIu64, message->headNum);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    HeadHash       : %s",   headHashString);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    HeadTd         : %s",   headTotalDifficulty);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    GenesisHash    : %s",   genesisHashString);
+        LOG (LL_INFO, ETH_LES, "    AnnounceType   : %" PRIu64, value.u.integer);
+    LOG (LL_INFO, ETH_LES, "    NetworkId      : %" PRIu64, message->chainId);
+    LOG (LL_INFO, ETH_LES, "    HeadNum        : %" PRIu64, message->headNum);
+    LOG (LL_INFO, ETH_LES, "    HeadHash       : %s",   headHashString);
+    LOG (LL_INFO, ETH_LES, "    HeadTd         : %s",   headTotalDifficulty);
+    LOG (LL_INFO, ETH_LES, "    GenesisHash    : %s",   genesisHashString);
 
     free (headTotalDifficulty);
 
 
     if (messageP2PStatusExtractValue(message, P2P_MESSAGE_STATUS_SERVE_HEADERS, &value))
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    ServeHeaders   : %s",
+        LOG (LL_INFO, ETH_LES, "    ServeHeaders   : %s",
              (ETHEREUM_BOOLEAN_IS_TRUE(value.u.boolean) ? "Yes" : "No"));
 
     if (messageP2PStatusExtractValue(message, P2P_MESSAGE_STATUS_SERVE_CHAIN_SINCE, &value))
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    ServeChainSince: %" PRIu64, value.u.integer);
+        LOG (LL_INFO, ETH_LES, "    ServeChainSince: %" PRIu64, value.u.integer);
 
     if (messageP2PStatusExtractValue(message, P2P_MESSAGE_STATUS_SERVE_STATE_SINCE, &value))
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    ServeStateSince: %" PRIu64, value.u.integer);
+        LOG (LL_INFO, ETH_LES, "    ServeStateSince: %" PRIu64, value.u.integer);
 
     if (messageP2PStatusExtractValue(message, P2P_MESSAGE_STATUS_TX_RELAY, &value))
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    TxRelay        : %s",
+        LOG (LL_INFO, ETH_LES, "    TxRelay        : %s",
                  (ETHEREUM_BOOLEAN_IS_TRUE(value.u.boolean) ? "Yes" : "No"));
 
     if (messageP2PStatusExtractValue(message, P2P_MESSAGE_STATUS_FLOW_CONTROL_BL, &value))
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    FlowControl/BL : %" PRIu64, value.u.integer);
+        LOG (LL_INFO, ETH_LES, "    FlowControl/BL : %" PRIu64, value.u.integer);
 
     if (messageP2PStatusExtractValue(message, P2P_MESSAGE_STATUS_FLOW_CONTROL_MRR, &value))
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    FlowControl/MRR: %" PRIu64, value.u.integer);
+        LOG (LL_INFO, ETH_LES, "    FlowControl/MRR: %" PRIu64, value.u.integer);
 
 #if 0
     size_t count = (NULL == message->flowControlMRCCount ? 0 : *(message->flowControlMRCCount));
     if (count != 0) {
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    FlowControl/MRC:%s", "");
+        LOG (LL_INFO, ETH_LES, "    FlowControl/MRC:%s", "");
         for (size_t index = 0; index < count; index++) {
             const char *label = messageLESGetIdentifierName ((BREthereumLESMessageIdentifier) message->flowControlMRC[index].msgCode);
             if (NULL != label) {
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "      %2d", (BREthereumLESMessageIdentifier) message->flowControlMRC[index].msgCode);
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "        Request : %s", label);
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "        BaseCost: %" PRIu64, message->flowControlMRC[index].baseCost);
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "        ReqCost : %" PRIu64, message->flowControlMRC[index].reqCost);
+                LOG (LL_INFO, ETH_LES, "      %2d", (BREthereumLESMessageIdentifier) message->flowControlMRC[index].msgCode);
+                LOG (LL_INFO, ETH_LES, "        Request : %s", label);
+                LOG (LL_INFO, ETH_LES, "        BaseCost: %" PRIu64, message->flowControlMRC[index].baseCost);
+                LOG (LL_INFO, ETH_LES, "        ReqCost : %" PRIu64, message->flowControlMRC[index].reqCost);
             }
         }
     }

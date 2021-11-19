@@ -339,10 +339,10 @@ messageDISNeighborsDecode (BRRlpItem item, BREthereumMessageCoder coder, int rel
                        neighborDISDecode (neighborItems[index], coder));
 
 #if defined (NEED_TO_PRINT_DIS_NEIGHBOR_DETAILS)
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Neighbors: %s", "");
+        LOG (LL_INFO, ETH_LES, "Neighbors: %s", "");
         for (size_t index = 0; index < neighborsCount; index++) {
             BREthereumDISNeighbor neighbor = message.neighbors[index];
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    IP: %3d.%3d.%3d.%3d, UDP: %6d, TCP: %6d",
+            LOG (LL_INFO, ETH_LES, "    IP: %3d.%3d.%3d.%3d, UDP: %6d, TCP: %6d",
                  neighbor.node.addr.ipv4[0],
                  neighbor.node.addr.ipv4[1],
                  neighbor.node.addr.ipv4[2],

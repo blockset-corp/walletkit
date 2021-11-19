@@ -21,7 +21,7 @@ static void initializeEthereumLogs() {
     LOG_ADD_SUBMODULE(ETH,BCS);
     LOG_ADD_SUBMODULE(ETH,MEM);
     LOG_ADD_SUBMODULE(ETH,SHOW);
-    LOG_ADD_SUBMODULE(ETH,LES_LOG_TOPIC);
+    LOG_ADD_SUBMODULE(ETH,LES);
 }
 
 static WKAccountDetails

@@ -533,13 +533,13 @@ ethNodeShow (BREthereumNode node) {
     char descUDP[128], descTCP[128];
 
     BREthereumDISNeighborEnode enode = neighborDISAsEnode (ethNodeEndpointGetDISNeighbor(node->remote), 1);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Node: %15s", ethNodeEndpointGetHostname(node->remote));
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "   NodeID    : %s", enode.chars);
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "   Type      : %s", ethNodeTypeGetName(node->type));
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "   UDP       : %s", ethNodeStateDescribe (&node->states[NODE_ROUTE_UDP], descUDP));
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "   TCP       : %s", ethNodeStateDescribe (&node->states[ETHEREUM_NODE_ROUTE_TCP], descTCP));
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "   Discovered: %s", (ETHEREUM_BOOLEAN_IS_TRUE(node->discovered) ? "Yes" : "No"));
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "   Credits   : %" PRIu64, node->credits);
+    LOG (LL_INFO, ETH_LES, "Node: %15s", ethNodeEndpointGetHostname(node->remote));
+    LOG (LL_INFO, ETH_LES, "   NodeID    : %s", enode.chars);
+    LOG (LL_INFO, ETH_LES, "   Type      : %s", ethNodeTypeGetName(node->type));
+    LOG (LL_INFO, ETH_LES, "   UDP       : %s", ethNodeStateDescribe (&node->states[NODE_ROUTE_UDP], descUDP));
+    LOG (LL_INFO, ETH_LES, "   TCP       : %s", ethNodeStateDescribe (&node->states[ETHEREUM_NODE_ROUTE_TCP], descTCP));
+    LOG (LL_INFO, ETH_LES, "   Discovered: %s", (ETHEREUM_BOOLEAN_IS_TRUE(node->discovered) ? "Yes" : "No"));
+    LOG (LL_INFO, ETH_LES, "   Credits   : %" PRIu64, node->credits);
 }
 
 extern const BREthereumNodeEndpoint
@@ -816,7 +816,7 @@ ethNodeConnect (BREthereumNode node,
 
 #if defined (NODE_DEBUG_SOCKETS)
     // Increment here; on failure we'll decrement.
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Sockets: %d (Open)", ++socketOpenCount);
+    LOG (LL_INFO, ETH_LES, "Sockets: %d (Open)", ++socketOpenCount);
 #endif
 
 
@@ -843,7 +843,7 @@ ethNodeDisconnect (BREthereumNode node,
 #if defined (NODE_DEBUG_SOCKETS)
     // Close the appropriate endpoint route
     int failed = ethNodeEndpointClose (&node->remote, route, !ethNodeHasErrorState (node, route));
-    if (!failed) LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Sockets: %d (Closed)", --socketOpenCount);
+    if (!failed) LOG (LL_INFO, ETH_LES, "Sockets: %d (Closed)", --socketOpenCount);
 #else
     ethNodeEndpointClose (node->remote, route, !ethNodeHasErrorState (node, route));
 #endif
@@ -912,7 +912,7 @@ ethNodeHandleProvisionerMessage (BREthereumNode node,
 
         if (PROVISION_ERROR == provisioner->status) {
             result.u.error.reason = PROVISION_ERROR_NODE_DATA;
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ %3s, %15s ] => %15s (data error)",
+            LOG (LL_INFO, ETH_LES, "Recv: [ %3s, %15s ] => %15s (data error)",
                  messageGetIdentifierName(&message),
                  messageGetAnyIdentifierName(&message),
                  ethNodeEndpointGetHostname(node->remote));
@@ -965,7 +965,7 @@ ethNodeProcessRecvP2P (BREthereumNode node,
             break;
 
         case P2P_MESSAGE_HELLO:
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ P2P, %15s ] Unexpected",
+            LOG (LL_INFO, ETH_LES, "Recv: [ P2P, %15s ] Unexpected",
                  messageP2PGetIdentifierName (message.identifier));
             break;
     }
@@ -1007,7 +1007,7 @@ ethNodeProcessRecvDIS (BREthereumNode node,
 
         case DIS_MESSAGE_PONG:
         case DIS_MESSAGE_FIND_NEIGHBORS:
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ DIS, %15s ] Unexpected",
+            LOG (LL_INFO, ETH_LES, "Recv: [ DIS, %15s ] Unexpected",
                  messageDISGetIdentifierName (message.identifier));
             break;
     }
@@ -1049,13 +1049,13 @@ ethNodeProcessRecvLES (BREthereumNode node,
         case LES_MESSAGE_GET_HELPER_TRIE_PROOFS:
         case LES_MESSAGE_SEND_TX2:
         case LES_MESSAGE_GET_TX_STATUS:
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ LES, %15s ] Unexpected Request",
+            LOG (LL_INFO, ETH_LES, "Recv: [ LES, %15s ] Unexpected Request",
                  messageLESGetIdentifierName (message.identifier));
             break;
 
         case LES_MESSAGE_CONTRACT_CODES:
         case LES_MESSAGE_HELPER_TRIE_PROOFS:;
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ LES, %15s ] Unexpected Response",
+            LOG (LL_INFO, ETH_LES, "Recv: [ LES, %15s ] Unexpected Response",
                  messageLESGetIdentifierName (message.identifier));
             break;
 
@@ -1117,7 +1117,7 @@ ethNodeProcessRecvPIP (BREthereumNode node,
         case PIP_MESSAGE_REQUEST: {
             BRArrayOf(BREthereumPIPRequestInput) inputs = message.u.request.inputs;
             if (array_count (inputs) > 0)
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ PIP, %15s ] Unexpected Request (%zu)",
+                LOG (LL_INFO, ETH_LES, "Recv: [ PIP, %15s ] Unexpected Request (%zu)",
                      messagePIPGetRequestName (inputs[0].identifier),
                      array_count(inputs));
             break;
@@ -1160,7 +1160,7 @@ ethNodeProcessRecvPIP (BREthereumNode node,
         case PIP_MESSAGE_ACKNOWLEDGE_UPDATE:
         case PIP_MESSAGE_RELAY_TRANSACTIONS:
             // Nobody sends these to us.
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ PIP, %15s ] Unexpected Response",
+            LOG (LL_INFO, ETH_LES, "Recv: [ PIP, %15s ] Unexpected Response",
                  messagePIPGetIdentifierName (message));
             break;
     }
@@ -1397,7 +1397,7 @@ ethNodeProcess (BREthereumNode node,
                     if (0 != _sendAuthInitiator(node))
                         return ethNodeProcessFailure (node, ETHEREUM_NODE_ROUTE_TCP, NULL, ethNodeStateCreateErrorProtocol(NODE_PROTOCOL_TCP_AUTHENTICATION));
 
-                    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Send: [ WIP, %15s ] => %15s", "Auth", ethNodeEndpointGetHostname(node->remote));
+                    LOG (LL_INFO, ETH_LES, "Send: [ WIP, %15s ] => %15s", "Auth", ethNodeEndpointGetHostname(node->remote));
 
                     error = ethNodeEndpointSendData (node->remote, ETHEREUM_NODE_ROUTE_TCP, node->authBufCipher, AUTH_CIPHER_BUF_LEN); //  "auth initiator");
                     if (error)
@@ -1415,12 +1415,12 @@ ethNodeProcess (BREthereumNode node,
                     if (error)
                         return ethNodeProcessFailure (node, ETHEREUM_NODE_ROUTE_TCP, NULL, ethNodeStateCreateErrorUnix(error));
 
-                    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ WIP, %15s ] <= %15s", "Auth Ack", ethNodeEndpointGetHostname(node->remote));
+                    LOG (LL_INFO, ETH_LES, "Recv: [ WIP, %15s ] <= %15s", "Auth Ack", ethNodeEndpointGetHostname(node->remote));
                     if (ackCipherBufCount != ACK_CIPHER_BUF_LEN)
                         return ethNodeProcessFailure (node, ETHEREUM_NODE_ROUTE_TCP, NULL, ethNodeStateCreateErrorProtocol(NODE_PROTOCOL_TCP_AUTHENTICATION));
 
                     if (0 != _readAuthAckFromRecipient (node)) {
-                        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "%s", "Something went wrong with AUK");
+                        LOG (LL_INFO, ETH_LES, "%s", "Something went wrong with AUK");
                         return ethNodeProcessFailure (node, ETHEREUM_NODE_ROUTE_TCP, NULL, ethNodeStateCreateErrorProtocol(NODE_PROTOCOL_TCP_AUTHENTICATION));
                     }
 
@@ -1987,7 +1987,7 @@ ethNodeSend (BREthereumNode node,
 #if defined (NEED_TO_AVOID_PROOFS_LOGGING)
     if (MESSAGE_LES != message.identifier || LES_MESSAGE_GET_PROOFS_V2 != message.u.les.identifier)
 #endif
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Send: [ %s, %15s ] => %15s",
+    LOG (LL_INFO, ETH_LES, "Send: [ %s, %15s ] => %15s",
          messageGetIdentifierName (&message),
          messageGetAnyIdentifierName (&message),
          ethNodeEndpointGetHostname(node->remote));
@@ -2039,7 +2039,7 @@ ethNodeSend (BREthereumNode node,
 
 #if defined (NEED_TO_PRINT_SEND_RECV_DATA)
     if (!error)
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Size: Send: %s: PayLoad: %zu",
+        LOG (LL_INFO, ETH_LES, "Size: Send: %s: PayLoad: %zu",
              ethNodeEndpointRouteGetName(route),
              data.bytesCount);
 #endif
@@ -2131,7 +2131,7 @@ ethNodeRecv (BREthereumNode node,
             pthread_mutex_unlock (&node->lock);
 
 #if defined (NEED_TO_PRINT_SEND_RECV_DATA)
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Size: Recv: TCP: PayLoad: %u, Frame: %zu", headerCount, bytesCount);
+            LOG (LL_INFO, ETH_LES, "Size: Recv: TCP: PayLoad: %u, Frame: %zu", headerCount, bytesCount);
 #endif
             
             // get body/frame
@@ -2159,7 +2159,7 @@ ethNodeRecv (BREthereumNode node,
             BRRlpItem item = rlpDataGetItem (node->coder.rlp, data);
 
 #if defined (NEED_TO_PRINT_SEND_RECV_DATA)
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Size: Recv: TCP: Type: %u, Subtype: %d", type, subtype);
+            LOG (LL_INFO, ETH_LES, "Size: Recv: TCP: Type: %u, Subtype: %d", type, subtype);
 #endif
 
             // Finally, decode the message
@@ -2190,7 +2190,7 @@ ethNodeRecv (BREthereumNode node,
         if (MESSAGE_P2P == message.identifier && P2P_MESSAGE_DISCONNECT == message.u.p2p.identifier)
             sprintf (disconnect, " (%s)", messageP2PDisconnectDescription (message.u.p2p.u.disconnect.reason));
 
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ %s, %15s ] <= %15s%s",
+        LOG (LL_INFO, ETH_LES, "Recv: [ %s, %15s ] <= %15s%s",
              messageGetIdentifierName (&message),
              messageGetAnyIdentifierName (&message),
              ethNodeEndpointGetHostname(node->remote),
@@ -2335,7 +2335,7 @@ _BRECDH(void *out32, const BRKey *privKey, BRKey *pubKey)
 static int // 0 on success
 _sendAuthInitiator(BREthereumNode node) {
 
-    // LOG (LL_INFO, ETH_LES_LOG_TOPIC, "%s", "generating auth initiator");
+    // LOG (LL_INFO, ETH_LES, "%s", "generating auth initiator");
 
     // authInitiator -> E(remote-pubk, S(ephemeral-privk, static-shared-secret ^ nonce) || H(ephemeral-pubk) || pubk || nonce || 0x0)
     uint8_t * authBuf = node->authBuf;
@@ -2393,7 +2393,7 @@ _sendAuthInitiator(BREthereumNode node) {
 //static void
 //_readAuthFromInitiator(BREthereumNode node) {
 //    BRKey* nodeKey = &node->local.key; // ethNodeGetKey(node);
-//    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "%s", "received auth from initiator");
+//    LOG (LL_INFO, ETH_LES, "%s", "received auth from initiator");
 //
 //    size_t len = BRKeyECIESAES128SHA256Decrypt(nodeKey, node->authBuf, AUTH_BUF_LEN, node->authBufCipher, AUTH_CIPHER_BUF_LEN);
 //
@@ -2427,7 +2427,7 @@ _sendAuthInitiator(BREthereumNode node) {
 //
 //static void
 //_sendAuthAckToInitiator(BREthereumNode node) {
-//    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "%s", "generating auth ack for initiator");
+//    LOG (LL_INFO, ETH_LES, "%s", "generating auth ack for initiator");
 //
 //    // authRecipient -> E(remote-pubk, epubK|| nonce || 0x0)
 //    uint8_t* ackBuf = node->ackBuf;
@@ -2460,7 +2460,7 @@ _readAuthAckFromRecipient(BREthereumNode node) {
 
     BRKey* nodeKey = ethNodeEndpointGetKey (node->local);
 
-    // LOG (LL_INFO, ETH_LES_LOG_TOPIC,"%s", "received auth ack from recipient");
+    // LOG (LL_INFO, ETH_LES,"%s", "received auth ack from recipient");
 
     size_t len = BRKeyECIESAES128SHA256Decrypt(nodeKey, node->ackBuf, ACK_BUF_LEN, node->ackBufCipher, ACK_CIPHER_BUF_LEN);
 

@@ -61,15 +61,15 @@ extern void
 messageLESStatusShow(BREthereumLESMessageStatus *status) {
     messageP2PStatusShow(&status->p2p);
 
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    FlowControl/MRC:%s", "");
+    LOG (LL_INFO, ETH_LES, "    FlowControl/MRC:%s", "");
     for (size_t index = 0; index < NUMBER_OF_LES_MESSAGE_IDENTIFIERS; index++)
         if (index == status->costs[index].msgCode) {
             const char *label = messageLESGetIdentifierName ((BREthereumLESMessageIdentifier) status->costs[index].msgCode);
             if (NULL != label) {
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "        Request : %" PRIu64 " (%s)", status->costs[index].msgCode, label);
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "        BaseCost: %" PRIu64, status->costs[index].baseCost);
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "        ReqCost : %" PRIu64, status->costs[index].reqCost);
-                LOG (LL_INFO, ETH_LES_LOG_TOPIC, "%s", "");
+                LOG (LL_INFO, ETH_LES, "        Request : %" PRIu64 " (%s)", status->costs[index].msgCode, label);
+                LOG (LL_INFO, ETH_LES, "        BaseCost: %" PRIu64, status->costs[index].baseCost);
+                LOG (LL_INFO, ETH_LES, "        ReqCost : %" PRIu64, status->costs[index].reqCost);
+                LOG (LL_INFO, ETH_LES, "%s", "");
             }
         }
 }

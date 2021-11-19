@@ -12,6 +12,17 @@
 #include "litecoin/BRLitecoinParams.h" // For LTC_BIP32_DEPTH & CHILD
 #include "dogecoin/BRDogecoinParams.h" // For DOGE_BIP32_DEPTH & CHILD
 
+#define MACRO_GENERATION
+#include "bitcoin/BTCLog.h"
+
+static pthread_once_t initBTCLogsOnce = PTHREAD_ONCE_INIT;
+static void initializeBTCLogs() {
+    LOG_REGISTER_MODULE(BTC);
+    LOG_ADD_SUBMODULE(BTC,PEER);
+    LOG_ADD_SUBMODULE(BTC,BWM);
+    LOG_ADD_SUBMODULE(BTC,BPM);
+}
+
 static WKAccountDetails
 wkAccountCreateSeedInternal(
     UInt512         seed,
@@ -20,6 +31,8 @@ wkAccountCreateSeedInternal(
 
     BRMasterPubKey *pubKey = (BRMasterPubKey*) calloc (1, sizeof(BRMasterPubKey));
     assert (pubKey != NULL);
+    
+    pthread_once (&initBTCLogsOnce, initializeBTCLogs);
     
     *pubKey = BRBIP32MasterPubKeyPath(seed.u8,
                                       sizeof (seed.u8),
@@ -39,6 +52,8 @@ wkAccountCreateFromBytesBTC(
     pubKey = (BRMasterPubKey*) calloc (1, sizeof(BRMasterPubKey));
     assert (pubKey != NULL);
 
+    pthread_once (&initBTCLogsOnce, initializeBTCLogs);
+    
     // There is a slight chance that this fails IF AND ONLY IF the serialized format
     // of a MasterPublicKey either changes or is key dependent.  That is, we parse the MPK
     // from `bytes` but if THIS PARSE needs more than the original parse we might run

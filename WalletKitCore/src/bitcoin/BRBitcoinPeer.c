@@ -24,6 +24,7 @@
 
 #include "BRBitcoinPeer.h"
 #include "BRBitcoinMerkleBlock.h"
+#include "BTCLog.h"
 #include "support/BRBase.h"
 #include "support/BRAddress.h"
 #include "support/BRSet.h"
@@ -170,10 +171,10 @@ static void _btcPeerDidConnect(BRBitcoinPeer *peer)
 
     pthread_mutex_lock(&ctx->lock);
     if (ctx->status == BRPeerStatusConnecting && ctx->sentVerack && ctx->gotVerack) {
-        peer_log(peer, "handshake completed");
+        LOG_PEER (LL_INFO, peer, "handshake completed");
         ctx->disconnectTime = DBL_MAX;
         ctx->status = BRPeerStatusConnected;
-        peer_log(peer, "connected with lastblock: %"PRIu32, ctx->lastblock);
+        LOG_PEER (LL_INFO, peer, "connected with lastblock: %"PRIu32, ctx->lastblock);
         pthread_mutex_unlock(&ctx->lock);
         if (ctx->connected) ctx->connected(ctx->info);
     }
@@ -192,7 +193,7 @@ static int _btcPeerAcceptVersionMessage(BRBitcoinPeer *peer, const uint8_t *msg,
     int r = 1;
     
     if (85 > msgLen) {
-        peer_log(peer, "malformed version message, length is %zu, should be >= 85", msgLen);
+        LOG_PEER (LL_INFO, peer, "malformed version message, length is %zu, should be >= 85", msgLen);
         r = 0;
     }
     else {
@@ -220,12 +221,12 @@ static int _btcPeerAcceptVersionMessage(BRBitcoinPeer *peer, const uint8_t *msg,
         off += len;
 
         if (off + strLen + sizeof(uint32_t) > msgLen) {
-            peer_log(peer, "malformed version message, length is %zu, should be %zu", msgLen,
+            LOG_PEER (LL_INFO, peer, "malformed version message, length is %zu, should be %zu", msgLen,
                      off + strLen + sizeof(uint32_t));
             r = 0;
         }
         else if (ctx->version < MIN_PROTO_VERSION) {
-            peer_log(peer, "protocol version %"PRIu32" not supported", ctx->version);
+            LOG_PEER (LL_INFO, peer, "protocol version %"PRIu32" not supported", ctx->version);
             r = 0;
         }
         else {
@@ -235,7 +236,7 @@ static int _btcPeerAcceptVersionMessage(BRBitcoinPeer *peer, const uint8_t *msg,
             off += strLen;
             ctx->lastblock = UInt32GetLE(&msg[off]);
             off += sizeof(uint32_t);            ANALYZER_IGNORE_UNREAD_VARIABLE(off);
-            peer_log(peer, "got version %"PRIu32", services %"PRIx64", useragent:\"%s\"", ctx->version, peer->services,
+            LOG_PEER (LL_INFO, peer, "got version %"PRIu32", services %"PRIx64", useragent:\"%s\"", ctx->version, peer->services,
                      ctx->useragent);
             btcPeerSendVerackMessage(peer);
         }
@@ -251,13 +252,13 @@ static int _btcPeerAcceptVerackMessage(BRBitcoinPeer *peer, const uint8_t *msg, 
     int r = 1;
     
     if (ctx->gotVerack) {
-        peer_log(peer, "got unexpected verack");
+        LOG_PEER (LL_INFO, peer, "got unexpected verack");
     }
     else {
         gettimeofday(&tv, NULL);
         ctx->pingTime = tv.tv_sec + (double)tv.tv_usec/1000000 - ctx->startTime; // use verack time as initial ping time
         ctx->startTime = 0;
-        peer_log(peer, "got verack in %fs", ctx->pingTime);
+        LOG_PEER (LL_INFO, peer, "got verack in %fs", ctx->pingTime);
         ctx->gotVerack = 1;
         _btcPeerDidConnect(peer);
     }
@@ -273,19 +274,19 @@ static int _btcPeerAcceptAddrMessage(BRBitcoinPeer *peer, const uint8_t *msg, si
     int r = 1;
     
     if (off == 0 || off + count*30 > msgLen) {
-        peer_log(peer, "malformed addr message, length is %zu, should be %zu for %zu address(es)", msgLen,
+        LOG_PEER (LL_INFO, peer, "malformed addr message, length is %zu, should be %zu for %zu address(es)", msgLen,
                  BRVarIntSize(count) + 30*count, count);
         r = 0;
     }
     else if (count > 1000) {
-        peer_log(peer, "dropping addr message, %zu is too many addresses, max is 1000", count);
+        LOG_PEER (LL_INFO, peer, "dropping addr message, %zu is too many addresses, max is 1000", count);
     }
     else if (ctx->sentGetaddr) { // simple anti-tarpitting tactic, don't accept unsolicited addresses
         BRBitcoinPeer peers[count], p;
         size_t peersCount = 0;
         time_t now = time(NULL);
         
-        peer_log(peer, "got addr with %zu address(es)", count);
+        LOG_PEER (LL_INFO, peer, "got addr with %zu address(es)", count);
 
         for (size_t i = 0; i < count; i++) {
             p.timestamp = UInt32GetLE(&msg[off]);
@@ -319,19 +320,19 @@ static int _btcPeerAcceptInvMessage(BRBitcoinPeer *peer, const uint8_t *msg, siz
     int r = 1;
     
     if (off == 0 || off + count*36 > msgLen) {
-        peer_log(peer, "malformed inv message, length is %zu, should be %zu for %zu item(s)", msgLen,
+        LOG_PEER (LL_INFO, peer, "malformed inv message, length is %zu, should be %zu for %zu item(s)", msgLen,
                  BRVarIntSize(count) + 36*count, count);
         r = 0;
     }
     else if (count > MAX_GETDATA_HASHES) {
-        peer_log(peer, "dropping inv message, %zu is too many items, max is %d", count, MAX_GETDATA_HASHES);
+        LOG_PEER (LL_INFO, peer, "dropping inv message, %zu is too many items, max is %d", count, MAX_GETDATA_HASHES);
     }
     else {
         inv_type type;
         const uint8_t *transactions[count], *blocks[count];
         size_t i, j, txCount = 0, blockCount = 0;
         
-        peer_log(peer, "got inv with %zu item(s)", count);
+        LOG_PEER (LL_INFO, peer, "got inv with %zu item(s)", count);
 
         for (i = 0; i < count; i++) {
             type = UInt32GetLE(&msg[off]);
@@ -346,16 +347,16 @@ static int _btcPeerAcceptInvMessage(BRBitcoinPeer *peer, const uint8_t *msg, siz
         }
 
         if (txCount > 0 && ! ctx->sentFilter && ! ctx->sentMempool && ! ctx->sentGetblocks) {
-            peer_log(peer, "got inv message before loading a filter");
+            LOG_PEER (LL_INFO, peer, "got inv message before loading a filter");
             r = 0;
         }
         else if (txCount > 10000) { // sanity check
-            peer_log(peer, "too many transactions, disconnecting");
+            LOG_PEER (LL_INFO, peer, "too many transactions, disconnecting");
             r = 0;
         }
         else if (ctx->currentBlockHeight > 0 && blockCount > 2 && blockCount < 500 &&
                  ctx->currentBlockHeight + array_count(ctx->knownBlockHashes) + blockCount < ctx->lastblock) {
-            peer_log(peer, "non-standard inv, %zu is fewer block hash(es) than expected", blockCount);
+            LOG_PEER (LL_INFO, peer, "non-standard inv, %zu is fewer block hash(es) than expected", blockCount);
             r = 0;
         }
         else {
@@ -397,7 +398,7 @@ static int _btcPeerAcceptInvMessage(BRBitcoinPeer *peer, const uint8_t *msg, siz
             }
             
             if (txCount > 0 && ctx->mempoolCallback) {
-                peer_log(peer, "got initial mempool response");
+                LOG_PEER (LL_INFO, peer, "got initial mempool response");
                 btcPeerSendPing(peer, ctx->mempoolInfo, ctx->mempoolCallback);
                 ctx->mempoolCallback = NULL;
 
@@ -420,17 +421,17 @@ static int _btcPeerAcceptTxMessage(BRBitcoinPeer *peer, const uint8_t *msg, size
     int r = 1;
 
     if (! tx) {
-        peer_log(peer, "malformed tx message with length: %zu", msgLen);
+        LOG_PEER (LL_INFO, peer, "malformed tx message with length: %zu", msgLen);
         r = 0;
     }
     else if (! ctx->sentFilter && ! ctx->sentGetdata) {
-        peer_log(peer, "got tx message before loading filter");
+        LOG_PEER (LL_INFO, peer, "got tx message before loading filter");
         btcTransactionFree(tx);
         r = 0;
     }
     else {
         txHash = tx->txHash;
-        peer_log(peer, "got tx: %s", u256hex(txHash));
+        LOG_PEER (LL_INFO, peer, "got tx: %s", u256hex(txHash));
 
         if (ctx->relayedTx) {
             ctx->relayedTx(ctx->info, tx);
@@ -466,10 +467,10 @@ static int _btcPeerAcceptHeadersMessage(BRBitcoinPeer *peer, const uint8_t *msg,
     UInt256 locators[2];
     BRBitcoinMerkleBlock *block;
     
-    peer_log(peer, "got %zu header(s)", count);
+    LOG_PEER (LL_INFO, peer, "got %zu header(s)", count);
     
     if (count < 2000 && (timestamp == 0 || timestamp + 7*24*60*60 + BLOCK_MAX_TIME_DRIFT < ctx->earliestKeyTime)) {
-        peer_log(peer, "non-standard headers message, %zu is fewer header(s) than expected", count);
+        LOG_PEER (LL_INFO, peer, "non-standard headers message, %zu is fewer header(s) than expected", count);
         r = 0;
     }
                 
@@ -477,11 +478,11 @@ static int _btcPeerAcceptHeadersMessage(BRBitcoinPeer *peer, const uint8_t *msg,
         block = btcMerkleBlockParse(&msg[off], msgLen - off);
         
         if (! block) {
-            peer_log(peer, "malformed headers message with length: %zu", msgLen);
+            LOG_PEER (LL_INFO, peer, "malformed headers message with length: %zu", msgLen);
             r = 0;
         }
         else if (! btcMerkleBlockIsValid(block, (uint32_t)now)) {
-            peer_log(peer, "invalid block header: %s", u256hex(block->blockHash));
+            LOG_PEER (LL_INFO, peer, "invalid block header: %s", u256hex(block->blockHash));
             btcMerkleBlockFree(block);
             r = 0;
         }
@@ -510,7 +511,7 @@ static int _btcPeerAcceptHeadersMessage(BRBitcoinPeer *peer, const uint8_t *msg,
 
 static int _btcPeerAcceptGetaddrMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t msgLen)
 {
-    peer_log(peer, "got getaddr");
+    LOG_PEER (LL_INFO, peer, "got getaddr");
     btcPeerSendAddr(peer);
     return 1;
 }
@@ -522,18 +523,18 @@ static int _btcPeerAcceptGetdataMessage(BRBitcoinPeer *peer, const uint8_t *msg,
     int r = 1;
     
     if (off == 0 || off + 36*count > msgLen) {
-        peer_log(peer, "malformed getdata message, length is %zu, should %zu for %zu item(s)", msgLen,
+        LOG_PEER (LL_INFO, peer, "malformed getdata message, length is %zu, should %zu for %zu item(s)", msgLen,
                  BRVarIntSize(count) + 36*count, count);
         r = 0;
     }
     else if (count > MAX_GETDATA_HASHES) {
-        peer_log(peer, "dropping getdata message, %zu is too many items, max is %d", count, MAX_GETDATA_HASHES);
+        LOG_PEER (LL_INFO, peer, "dropping getdata message, %zu is too many items, max is %d", count, MAX_GETDATA_HASHES);
     }
     else {
         struct inv_item { uint8_t item[36]; } *notfound = NULL;
         BRBitcoinTransaction *tx = NULL;
         
-        peer_log(peer, "got getdata with %zu item(s)", count);
+        LOG_PEER (LL_INFO, peer, "got getdata with %zu item(s)", count);
         
         for (size_t i = 0; i < count; i++) {
             inv_type type = UInt32GetLE(&msg[off]);
@@ -553,7 +554,7 @@ static int _btcPeerAcceptGetdataMessage(BRBitcoinPeer *peer, const uint8_t *msg,
                             sprintf(&txHex[j*2], "%02x", buf[j]);
                         }
                         
-                        peer_log(peer, "publishing tx: %s", txHex);
+                        LOG_PEER (LL_INFO, peer, "publishing tx: %s", txHex);
                         btcPeerSendMessage(peer, buf, bufLen, MSG_TX);
                         break;
                     }
@@ -592,18 +593,18 @@ static int _btcPeerAcceptNotfoundMessage(BRBitcoinPeer *peer, const uint8_t *msg
     int r = 1;
 
     if (off == 0 || off + 36*count > msgLen) {
-        peer_log(peer, "malformed notfound message, length is %zu, should be %zu for %zu item(s)", msgLen,
+        LOG_PEER (LL_INFO, peer, "malformed notfound message, length is %zu, should be %zu for %zu item(s)", msgLen,
                  BRVarIntSize(count) + 36*count, count);
         r = 0;
     }
     else if (count > MAX_GETDATA_HASHES) {
-        peer_log(peer, "dropping notfound message, %zu is too many items, max is %d", count, MAX_GETDATA_HASHES);
+        LOG_PEER (LL_INFO, peer, "dropping notfound message, %zu is too many items, max is %d", count, MAX_GETDATA_HASHES);
     }
     else {
         inv_type type;
         UInt256 *txHashes, *blockHashes, hash;
         
-        peer_log(peer, "got notfound with %zu item(s)", count);
+        LOG_PEER (LL_INFO, peer, "got notfound with %zu item(s)", count);
         array_new(txHashes, 1);
         array_new(blockHashes, 1);
         
@@ -640,11 +641,11 @@ static int _btcPeerAcceptPingMessage(BRBitcoinPeer *peer, const uint8_t *msg, si
     int r = 1;
     
     if (sizeof(uint64_t) > msgLen) {
-        peer_log(peer, "malformed ping message, length is %zu, should be %zu", msgLen, sizeof(uint64_t));
+        LOG_PEER (LL_INFO, peer, "malformed ping message, length is %zu, should be %zu", msgLen, sizeof(uint64_t));
         r = 0;
     }
     else {
-        peer_log(peer, "got ping");
+        LOG_PEER (LL_INFO, peer, "got ping");
         btcPeerSendMessage(peer, msg, msgLen, MSG_PONG);
     }
 
@@ -659,15 +660,15 @@ static int _btcPeerAcceptPongMessage(BRBitcoinPeer *peer, const uint8_t *msg, si
     int r = 1;
     
     if (sizeof(uint64_t) > msgLen) {
-        peer_log(peer, "malformed pong message, length is %zu, should be %zu", msgLen, sizeof(uint64_t));
+        LOG_PEER (LL_INFO, peer, "malformed pong message, length is %zu, should be %zu", msgLen, sizeof(uint64_t));
         r = 0;
     }
     else if (UInt64GetLE(msg) != ctx->nonce) {
-        peer_log(peer, "pong message has wrong nonce: %"PRIu64", expected: %"PRIu64, UInt64GetLE(msg), ctx->nonce);
+        LOG_PEER (LL_INFO, peer, "pong message has wrong nonce: %"PRIu64", expected: %"PRIu64, UInt64GetLE(msg), ctx->nonce);
         r = 0;
     }
     else if (array_count(ctx->pongCallback) == 0) {
-        peer_log(peer, "got unexpected pong");
+        LOG_PEER (LL_INFO, peer, "got unexpected pong");
         r = 0;
     }
     else {
@@ -678,9 +679,9 @@ static int _btcPeerAcceptPongMessage(BRBitcoinPeer *peer, const uint8_t *msg, si
             // 50% low pass filter on current ping time
             ctx->pingTime = ctx->pingTime*0.5 + pingTime*0.5;
             ctx->startTime = 0;
-            peer_log(peer, "got pong in %fs", pingTime);
+            LOG_PEER (LL_INFO, peer, "got pong in %fs", pingTime);
         }
-        else peer_log(peer, "got pong");
+        else LOG_PEER (LL_INFO, peer, "got pong");
 
         if (array_count(ctx->pongCallback) > 0) {
             void (*pongCallback)(void *, int) = ctx->pongCallback[0];
@@ -705,17 +706,17 @@ static int _btcPeerAcceptMerkleblockMessage(BRBitcoinPeer *peer, const uint8_t *
     int r = 1;
   
     if (! block) {
-        peer_log(peer, "malformed merkleblock message with length: %zu", msgLen);
+        LOG_PEER (LL_INFO, peer, "malformed merkleblock message with length: %zu", msgLen);
         r = 0;
     }
     else if (! btcMerkleBlockIsValid(block, (uint32_t)time(NULL))) {
-        peer_log(peer, "invalid merkleblock: %s", u256hex(block->blockHash));
+        LOG_PEER (LL_INFO, peer, "invalid merkleblock: %s", u256hex(block->blockHash));
         btcMerkleBlockFree(block);
         block = NULL;
         r = 0;
     }
     else if (! ctx->sentFilter && ! ctx->sentGetdata) {
-        peer_log(peer, "got merkleblock message before loading a filter");
+        LOG_PEER (LL_INFO, peer, "got merkleblock message before loading a filter");
         btcMerkleBlockFree(block);
         block = NULL;
         r = 0;
@@ -756,7 +757,7 @@ static int _btcPeerAcceptRejectMessage(BRBitcoinPeer *peer, const uint8_t *msg, 
     int r = 1;
     
     if (off + strLen + sizeof(uint8_t) > msgLen) {
-        peer_log(peer, "malformed reject message, length is %zu, should be >= %zu", msgLen,
+        LOG_PEER (LL_INFO, peer, "malformed reject message, length is %zu, should be >= %zu", msgLen,
                  off + strLen + sizeof(uint8_t));
         r = 0;
     }
@@ -774,7 +775,7 @@ static int _btcPeerAcceptRejectMessage(BRBitcoinPeer *peer, const uint8_t *msg, 
         if (strncmp(type, MSG_TX, sizeof(type)) == 0) hashLen = sizeof(UInt256);
         
         if (off + strLen + hashLen > msgLen) {
-            peer_log(peer, "malformed reject message, length is %zu, should be >= %zu", msgLen, off + strLen + hashLen);
+            LOG_PEER (LL_INFO, peer, "malformed reject message, length is %zu, should be >= %zu", msgLen, off + strLen + hashLen);
             r = 0;
         }
         else {
@@ -788,10 +789,10 @@ static int _btcPeerAcceptRejectMessage(BRBitcoinPeer *peer, const uint8_t *msg, 
             off += hashLen;
 
             if (! UInt256IsZero(txHash)) {
-                peer_log(peer, "rejected %s code: 0x%x reason: \"%s\" txid: %s", type, code, reason, u256hex(txHash));
+                LOG_PEER (LL_INFO, peer, "rejected %s code: 0x%x reason: \"%s\" txid: %s", type, code, reason, u256hex(txHash));
                 if (ctx->rejectedTx) ctx->rejectedTx(ctx->info, txHash, code);
             }
-            else peer_log(peer, "rejected %s code: 0x%x reason: \"%s\"", type, code, reason);
+            else LOG_PEER (LL_INFO, peer, "rejected %s code: 0x%x reason: \"%s\"", type, code, reason);
         }
     }
 
@@ -805,7 +806,7 @@ static int _btcPeerAcceptFeeFilterMessage(BRBitcoinPeer *peer, const uint8_t *ms
     int r = 1;
     
     if (sizeof(uint64_t) > msgLen) {
-        peer_log(peer, "malformed feefilter message, length is %zu, should be >= %zu", msgLen, sizeof(uint64_t));
+        LOG_PEER (LL_INFO, peer, "malformed feefilter message, length is %zu, should be >= %zu", msgLen, sizeof(uint64_t));
         r = 0;
     }
     else {
@@ -813,7 +814,7 @@ static int _btcPeerAcceptFeeFilterMessage(BRBitcoinPeer *peer, const uint8_t *ms
         ctx->feePerKb = UInt64GetLE(msg);
         pthread_mutex_unlock(&ctx->lock);
         
-        peer_log(peer, "got feefilter with rate %"PRIu64, ctx->feePerKb);
+        LOG_PEER (LL_INFO, peer, "got feefilter with rate %"PRIu64, ctx->feePerKb);
         if (ctx->setFeePerKb) ctx->setFeePerKb(ctx->info, ctx->feePerKb);
     }
     
@@ -826,7 +827,7 @@ static int _btcPeerAcceptMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t
     int r = 1;
     
     if (ctx->currentBlock && strncmp(MSG_TX, type, 12) != 0) { // if we receive a non-tx message, merkleblock is done
-        peer_log(peer, "incomplete merkleblock %s, expected %zu more tx, got %s", u256hex(ctx->currentBlock->blockHash),
+        LOG_PEER (LL_INFO, peer, "incomplete merkleblock %s, expected %zu more tx, got %s", u256hex(ctx->currentBlock->blockHash),
                  array_count(ctx->currentBlockTxHashes), type);
         array_clear(ctx->currentBlockTxHashes);
         ctx->currentBlock = NULL;
@@ -846,7 +847,7 @@ static int _btcPeerAcceptMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t
     else if (strncmp(MSG_MERKLEBLOCK, type, 12) == 0) r = _btcPeerAcceptMerkleblockMessage(peer, msg, msgLen);
     else if (strncmp(MSG_REJECT, type, 12) == 0) r = _btcPeerAcceptRejectMessage(peer, msg, msgLen);
     else if (strncmp(MSG_FEEFILTER, type, 12) == 0) r = _btcPeerAcceptFeeFilterMessage(peer, msg, msgLen);
-    else peer_log(peer, "dropping %s, length %zu, not implemented", type, msgLen);
+    else LOG_PEER (LL_INFO, peer, "dropping %s, length %zu, not implemented", type, msgLen);
 
     return r;
 }
@@ -921,11 +922,11 @@ static int _btcPeerOpenSocket(BRBitcoinPeer *peer, int domain, double timeout, i
         }
         else if (err) r = 0;
 
-        if (r) peer_log(peer, "socket connected");
+        if (r) LOG_PEER (LL_INFO, peer, "socket connected");
         fcntl(sock, F_SETFL, arg); // restore socket non-blocking status
     }
 
-    if (! r && err) peer_log(peer, "connect error: %s", strerror(err));
+    if (! r && err) LOG_PEER (LL_INFO, peer, "connect error: %s", strerror(err));
     if (error && err) *error = err;
     return r;
 }
@@ -1009,7 +1010,7 @@ static void *_peerThreadRoutine(void *arg)
                 if (! error && time >= _peerGetDisconnectTime(ctx)) error = ETIMEDOUT;
 
                 if (! error && time >= _peerGetMempoolTime(ctx)) {
-                    peer_log(peer, "done waiting for mempool response");
+                    LOG_PEER (LL_INFO, peer, "done waiting for mempool response");
                     btcPeerSendPing(peer, ctx->mempoolInfo, ctx->mempoolCallback);
                     ctx->mempoolCallback = NULL;
 
@@ -1026,10 +1027,10 @@ static void *_peerThreadRoutine(void *arg)
             }
             
             if (error) {
-                peer_log(peer, "%s", strerror(error));
+                LOG_PEER (LL_INFO, peer, "%s", strerror(error));
             }
             else if (header[15] != 0) { // verify header type field is NULL terminated
-                peer_log(peer, "malformed message header: type not NULL terminated");
+                LOG_PEER (LL_INFO, peer, "malformed message header: type not NULL terminated");
                 error = EPROTO;
             }
             else if (len == HEADER_LENGTH) {
@@ -1039,7 +1040,7 @@ static void *_peerThreadRoutine(void *arg)
                 UInt256 hash;
                 
                 if (msgLen > MAX_MSG_LENGTH) { // check message length
-                    peer_log(peer, "error reading %s, message length %"PRIu32" is too long", type, msgLen);
+                    LOG_PEER (LL_INFO, peer, "error reading %s, message length %"PRIu32" is too long", type, msgLen);
                     error = EPROTO;
                 }
                 else {
@@ -1062,13 +1063,13 @@ static void *_peerThreadRoutine(void *arg)
                     }
                     
                     if (error) {
-                        peer_log(peer, "%s", strerror(error));
+                        LOG_PEER (LL_INFO, peer, "%s", strerror(error));
                     }
                     else if (len == msgLen) {
                         BRSHA256_2(&hash, payload, msgLen);
                         
                         if (UInt32GetLE(&hash) != checksum) { // verify checksum
-                            peer_log(peer, "error reading %s, invalid checksum %x, expected %x, payload length:%"PRIu32
+                            LOG_PEER (LL_INFO, peer, "error reading %s, invalid checksum %x, expected %x, payload length:%"PRIu32
                                      ", SHA256_2:%s", type, UInt32GetLE(&hash), checksum, msgLen, u256hex(hash));
                             error = EPROTO;
                         }
@@ -1087,7 +1088,7 @@ static void *_peerThreadRoutine(void *arg)
     pthread_mutex_unlock(&ctx->lock);
 
     if (socket >= 0) close(socket);
-    peer_log(peer, "disconnected");
+    LOG_PEER (LL_INFO, peer, "disconnected");
     
     while (array_count(ctx->pongCallback) > 0) {
         void (*pongCallback)(void *, int) = ctx->pongCallback[0];
@@ -1221,11 +1222,11 @@ void btcPeerConnect(BRBitcoinPeer *peer)
         ctx->status = BRPeerStatusConnecting;
     
         if (ctx->networkIsReachable && ! ctx->networkIsReachable(ctx->info)) { // delay until network is reachable
-            if (! ctx->waitingForNetwork) peer_log(peer, "waiting for network reachability");
+            if (! ctx->waitingForNetwork) LOG_PEER (LL_INFO, peer, "waiting for network reachability");
             ctx->waitingForNetwork = 1;
         }
         else {
-            peer_log(peer, "connecting");
+            LOG_PEER (LL_INFO, peer, "connecting");
             ctx->waitingForNetwork = 0;
             gettimeofday(&tv, NULL);
 
@@ -1234,7 +1235,7 @@ void btcPeerConnect(BRBitcoinPeer *peer)
 
             if (pthread_attr_init(&attr) != 0) {
                 // error = ENOMEM;
-                peer_log(peer, "error creating thread");
+                LOG_PEER (LL_INFO, peer, "error creating thread");
                 ctx->status = BRPeerStatusDisconnected;
                 //if (ctx->disconnected) ctx->disconnected(ctx->info, error);
             }
@@ -1242,7 +1243,7 @@ void btcPeerConnect(BRBitcoinPeer *peer)
                      pthread_attr_setstacksize(&attr, PTHREAD_STACK_SIZE) != 0 ||
                      pthread_create(&ctx->thread, &attr, _peerThreadRoutine, peer) != 0) {
                 // error = EAGAIN;
-                peer_log(peer, "error creating thread");
+                LOG_PEER (LL_INFO, peer, "error creating thread");
                 pthread_attr_destroy(&attr);
                 ctx->status = BRPeerStatusDisconnected;
                 //if (ctx->disconnected) ctx->disconnected(ctx->info, error);
@@ -1263,7 +1264,7 @@ void btcPeerDisconnect(BRBitcoinPeer *peer)
         ctx->status = BRPeerStatusDisconnected;
         pthread_mutex_unlock(&ctx->lock);
 
-        if (shutdown(socket, SHUT_RDWR) < 0) peer_log(peer, "%s", strerror(errno));
+        if (shutdown(socket, SHUT_RDWR) < 0) LOG_PEER (LL_INFO, peer, "%s", strerror(errno));
         close(socket);
     }
 }
@@ -1346,7 +1347,7 @@ uint64_t btcPeerFeePerKb(BRBitcoinPeer *peer)
 void btcPeerSendMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t msgLen, const char *type)
 {
     if (msgLen > MAX_MSG_LENGTH) {
-        peer_log(peer, "failed to send %s, length %zu is too long", type, msgLen);
+        LOG_PEER (LL_INFO, peer, "failed to send %s, length %zu is too long", type, msgLen);
     }
     else {
         BRBitcoinPeerContext *ctx = (BRBitcoinPeerContext *)peer;
@@ -1366,7 +1367,7 @@ void btcPeerSendMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t msgLen, 
         memcpy(&buf[off], hash, sizeof(uint32_t));
         off += sizeof(uint32_t);
         memcpy(&buf[off], msg, msgLen);
-        peer_log(peer, "sending %s", type);
+        LOG_PEER (LL_INFO, peer, "sending %s", type);
         msgLen = 0;
         socket = _peerGetSocket(ctx);
         if (socket < 0) error = ENOTCONN;
@@ -1381,7 +1382,7 @@ void btcPeerSendMessage(BRBitcoinPeer *peer, const uint8_t *msg, size_t msgLen, 
         }
         
         if (error) {
-            peer_log(peer, "%s", strerror(error));
+            LOG_PEER (LL_INFO, peer, "%s", strerror(error));
             btcPeerDisconnect(peer);
         }
     }
@@ -1471,7 +1472,7 @@ void btcPeerSendMempool(BRBitcoinPeer *peer, const UInt256 knownTxHashes[], size
         btcPeerSendMessage(peer, NULL, 0, MSG_MEMPOOL);
     }
     else {
-        peer_log(peer, "mempool request already sent");
+        LOG_PEER (LL_INFO, peer, "mempool request already sent");
         if (completionCallback) completionCallback(info, 0);
     }
 }
@@ -1495,7 +1496,7 @@ void btcPeerSendGetheaders(BRBitcoinPeer *peer, const UInt256 locators[], size_t
     off += sizeof(UInt256);
 
     if (locatorsCount > 0) {
-        peer_log(peer, "calling getheaders with %zu locators: [%s,%s %s]", locatorsCount, u256hex(locators[0]),
+        LOG_PEER (LL_INFO, peer, "calling getheaders with %zu locators: [%s,%s %s]", locatorsCount, u256hex(locators[0]),
                  (locatorsCount > 2 ? " ...," : ""), (locatorsCount > 1 ? u256hex(locators[locatorsCount - 1]) : ""));
         btcPeerSendMessage(peer, msg, off, MSG_GETHEADERS);
     }
@@ -1520,7 +1521,7 @@ void btcPeerSendGetblocks(BRBitcoinPeer *peer, const UInt256 locators[], size_t 
     off += sizeof(UInt256);
     
     if (locatorsCount > 0) {
-        peer_log(peer, "calling getblocks with %zu locators: [%s,%s %s]", locatorsCount, u256hex(locators[0]),
+        LOG_PEER (LL_INFO, peer, "calling getblocks with %zu locators: [%s,%s %s]", locatorsCount, u256hex(locators[0]),
                  (locatorsCount > 2 ? " ...," : ""), (locatorsCount > 1 ? u256hex(locators[locatorsCount - 1]) : ""));
         btcPeerSendMessage(peer, msg, off, MSG_GETBLOCKS);
     }
@@ -1557,7 +1558,7 @@ void btcPeerSendGetdata(BRBitcoinPeer *peer, const UInt256 txHashes[], size_t tx
     size_t i, off = 0, count = txCount + blockCount;
     
     if (count > MAX_GETDATA_HASHES) { // limit total hash count to MAX_GETDATA_HASHES
-        peer_log(peer, "couldn't send getdata, %zu is too many items, max is %d", count, MAX_GETDATA_HASHES);
+        LOG_PEER (LL_INFO, peer, "couldn't send getdata, %zu is too many items, max is %d", count, MAX_GETDATA_HASHES);
     }
     else if (count > 0) {
         size_t msgLen = BRVarIntSize(count) + (sizeof(uint32_t) + sizeof(UInt256))*(count);
@@ -1615,7 +1616,7 @@ void btcPeerRerequestBlocks(BRBitcoinPeer *peer, UInt256 fromBlock)
    
     if (i > 0) {
         array_rm_range(ctx->knownBlockHashes, 0, i - 1);
-        peer_log(peer, "re-requesting %zu block(s)", array_count(ctx->knownBlockHashes));
+        LOG_PEER (LL_INFO, peer, "re-requesting %zu block(s)", array_count(ctx->knownBlockHashes));
         btcPeerSendGetdata(peer, NULL, 0, ctx->knownBlockHashes, array_count(ctx->knownBlockHashes));
     }
 }

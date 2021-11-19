@@ -1,5 +1,5 @@
 //
-//  BREthereumLog.h
+//  WKBTCLog.h
 //
 //  Created by Bryan Goring on 11/10/21.
 //  Copyright (c) 2021 breadwallet LLC.
@@ -22,16 +22,20 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef BREthereumLog_h
-#define BREthereumLog_h
+#ifndef BTCLog_h
+#define BTCLog_h
 
 // Declaration of the space of this module's logs
 #include "support/BRLog.h"
-LOG_DECLARE_MODULE(ETH);
-LOG_DECLARE_SUBMODULE(ETH,INIT);
-LOG_DECLARE_SUBMODULE(ETH,BCS);
-LOG_DECLARE_SUBMODULE(ETH,MEM);
-LOG_DECLARE_SUBMODULE(ETH,SHOW);
-LOG_DECLARE_SUBMODULE(ETH,LES);
+LOG_DECLARE_MODULE(BTC);
+LOG_DECLARE_SUBMODULE(BTC,PEER);
+LOG_DECLARE_SUBMODULE(BTC,BWM);
+LOG_DECLARE_SUBMODULE(BTC,BPM);
 
-#endif /* BREthereumLog_h */
+// Specialize general purpose LOG() for reporting on peers; antecedent: peer_log
+#define _va_first(first, ...) first
+#define _va_rest(first, ...) __VA_ARGS__
+#define LOG_PEER(lvl, peer, ...) LOG (lvl, BTC_PEER, "%s:%"PRIu16" " _va_first(__VA_ARGS__, NULL) "\n", btcPeerHost(peer),\
+        (peer)->port, _va_rest(__VA_ARGS__, NULL))
+
+#endif /* BTCLog_h */
