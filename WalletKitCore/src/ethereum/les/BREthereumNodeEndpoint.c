@@ -22,6 +22,7 @@
 #include <limits.h>
 #include "ethereum/util/BRUtil.h"
 #include "BREthereumNodeEndpoint.h"
+#include "ethereum/util/BREthereumLog.h"
 
 #ifndef HOST_NAME_MAX
 # if defined(_POSIX_HOST_NAME_MAX)
@@ -376,9 +377,9 @@ ethNodeEndpointClose (BREthereumNodeEndpoint endpoint,
         endpoint->sockets[route] = -1;
 
         if (needShutdown && shutdown (socket, SHUT_RDWR) < 0) {
-            eth_log (LES_LOG_TOPIC, "Socket %d (%s) Shutdown Error: %s", socket,
-                     ethNodeEndpointRouteGetName (route),
-                     strerror(errno));
+            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Socket %d (%s) Shutdown Error: %s", socket,
+                 ethNodeEndpointRouteGetName (route),
+                 strerror(errno));
 
             // Save the error
             int error = errno;
@@ -387,9 +388,9 @@ ethNodeEndpointClose (BREthereumNodeEndpoint endpoint,
             return 0 == close (socket) ? 0 : error;
         }
         if (close (socket) < 0) {
-            eth_log (LES_LOG_TOPIC, "Socket %d (%s) Close Error: %s", socket,
-                     ethNodeEndpointRouteGetName (route),
-                     strerror(errno));
+            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Socket %d (%s) Close Error: %s", socket,
+                 ethNodeEndpointRouteGetName (route),
+                 strerror(errno));
             return errno;
         }
     }
@@ -436,17 +437,17 @@ ethNodeEndpointRecvData (BREthereumNodeEndpoint endpoint,
         // !! DON'T MISS THIS !!
         *bytesCount = totalCount;
 #if defined (LES_LOG_RECV)
-        eth_log (LES_LOG_TOPIC, "read (%zu bytes) from peer [%s], contents: %s", len, endpoint->hostname, "?");
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "read (%zu bytes) from peer [%s], contents: %s", len, endpoint->hostname, "?");
 #endif
     }
 #if defined (LES_LOG_SEND_RECV_ERROR)
     else {
-        eth_log (LES_LOG_TOPIC, "Recv: [ %s, %15d ] => %15s %s%s",
-                 ethNodeEndpointRouteGetName(route),
-                 (NODE_ROUTE_UDP == route ? endpoint->dis.node.portUDP : endpoint->dis.node.portTCP),
-                 endpoint->hostname,
-                 "Error: ",
-                 strerror(error));
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ %s, %15d ] => %15s %s%s",
+             ethNodeEndpointRouteGetName(route),
+             (NODE_ROUTE_UDP == route ? endpoint->dis.node.portUDP : endpoint->dis.node.portTCP),
+             endpoint->hostname,
+             "Error: ",
+             strerror(error));
     }
 #endif
     return error;
@@ -482,17 +483,17 @@ ethNodeEndpointSendData (BREthereumNodeEndpoint endpoint,
 
     if (!error) {
 #if defined (LES_LOG_SEND)
-        eth_log (LES_LOG_TOPIC, "sent (%zu bytes) to peer[%s], contents: %s", totalCount, endpoint->hostname, "?");
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "sent (%zu bytes) to peer[%s], contents: %s", totalCount, endpoint->hostname, "?");
 #endif
     }
 #if defined (LES_LOG_SEND_RECV_ERROR)
     else {
-        eth_log (LES_LOG_TOPIC, "Send: %s @ %5d => %15s %s%s",
-                 ethNodeEndpointRouteGetName(route),
-                 (NODE_ROUTE_UDP == route ? endpoint->dis.node.portUDP : endpoint->dis.node.portTCP),
-                 endpoint->hostname,
-                 "Error: ",
-                 strerror(error));
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Send: %s @ %5d => %15s %s%s",
+             ethNodeEndpointRouteGetName(route),
+             (NODE_ROUTE_UDP == route ? endpoint->dis.node.portUDP : endpoint->dis.node.portTCP),
+             endpoint->hostname,
+             "Error: ",
+             strerror(error));
     }
 #endif
     return error;
@@ -538,12 +539,12 @@ ethNodeEndpointFillSockAddr (BREthereumNodeEndpoint endpoint,
 static int
 openSocketReportResult (BREthereumNodeEndpoint endpoint, int port, int type, int error) {
 #if defined (LES_LOG_REPORT_OPEN_SOCKET)
-    eth_log (LES_LOG_TOPIC, "Open: [ %s, %15d ] => %15s %s%s",
-             (type == SOCK_STREAM ? "TCP" : "UDP"),
-             port,
-             endpoint->hostname,
-             (0 == error ? "Success " : "Error: "),
-             (0 == error ? "" : strerror(error)));
+    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Open: [ %s, %15d ] => %15s %s%s",
+         (type == SOCK_STREAM ? "TCP" : "UDP"),
+         port,
+         endpoint->hostname,
+         (0 == error ? "Success " : "Error: "),
+         (0 == error ? "" : strerror(error)));
 #endif
     return error;
 }

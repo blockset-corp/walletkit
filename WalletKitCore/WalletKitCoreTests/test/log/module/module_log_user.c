@@ -18,4 +18,10 @@ void userFunction() {
     LOG(LL_INFO, SAMPLE_SUBC, "An info log");
 }
 
+void doALogBeforeRegistration() {
+    // If this function is called before initModule() which registers
+    // all this module's logs, then this will assert
+    LOG(LL_WARN, SAMPLE, "Asserts if log called prior to a registration...");
+}
+
 

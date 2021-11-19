@@ -15,6 +15,7 @@
 #include "support/BRAssert.h"
 #include "ethereum/base/BREthereumSignature.h"
 #include "BREthereumMessageDIS.h"
+#include "ethereum/util/BREthereumLog.h"
 
 // #define NEED_TO_PRINT_DIS_NEIGHBOR_DETAILS
 
@@ -338,16 +339,16 @@ messageDISNeighborsDecode (BRRlpItem item, BREthereumMessageCoder coder, int rel
                        neighborDISDecode (neighborItems[index], coder));
 
 #if defined (NEED_TO_PRINT_DIS_NEIGHBOR_DETAILS)
-        eth_log (LES_LOG_TOPIC, "Neighbors: %s", "");
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Neighbors: %s", "");
         for (size_t index = 0; index < neighborsCount; index++) {
             BREthereumDISNeighbor neighbor = message.neighbors[index];
-            eth_log (LES_LOG_TOPIC, "    IP: %3d.%3d.%3d.%3d, UDP: %6d, TCP: %6d",
-                     neighbor.node.addr.ipv4[0],
-                     neighbor.node.addr.ipv4[1],
-                     neighbor.node.addr.ipv4[2],
-                     neighbor.node.addr.ipv4[3],
-                     neighbor.node.portUDP,
-                     neighbor.node.portTCP);
+            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "    IP: %3d.%3d.%3d.%3d, UDP: %6d, TCP: %6d",
+                 neighbor.node.addr.ipv4[0],
+                 neighbor.node.addr.ipv4[1],
+                 neighbor.node.addr.ipv4[2],
+                 neighbor.node.addr.ipv4[3],
+                 neighbor.node.portUDP,
+                 neighbor.node.portTCP);
         }
 #endif
 

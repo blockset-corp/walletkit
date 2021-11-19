@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include "ethereum/les/BREthereumLES.h"
 #include "BREthereumBCSPrivate.h"
+#include "ethereum/util/BREthereumLog.h"
 
 /* Forward Declarations */
 static void
@@ -147,7 +148,7 @@ syncRangeGetDepth (BREthereumBCSSyncRange range) {
 }
 
 /**
- * Report SYNC results using eth_log()
+ * Report SYNC results using LOG()
  */
 static void
 syncRangeReport (BREthereumBCSSyncRange range,
@@ -160,10 +161,10 @@ syncRangeReport (BREthereumBCSSyncRange range,
 
     assert (range->head > range->tail);
 
-    eth_log ("BCS", "Sync: %s: (T:C:R:D) = ( %d : %4" PRIu64 " : {%7" PRIu64 ", %7" PRIu64 "} : %2d ) *** %s%p -> %p",
-             action,
-             range->type, range->count, range->tail, range->head, depth,
-             spaces, range, range->parent);
+    LOG (LL_INFO, ETH_BCS,, "Sync: %s: (T:C:R:D) = ( %d : %4" PRIu64 " : {%7" PRIu64 ", %7" PRIu64 "} : %2d ) *** %s%p -> %p",
+         action,
+         range->type, range->count, range->tail, range->head, depth,
+         spaces, range, range->parent);
 }
 
 /**
@@ -401,7 +402,7 @@ syncRangeCreate (BREthereumAddress address,
 static void
 syncRangeDispatch (BREthereumBCSSyncRange range) {
     if (NULL == range->parent)
-        eth_log ("BCS", "Sync: Start%s", "");
+        LOG (LL_INFO, ETH_BCS,, "Sync: Start%s", "");
 
     syncRangeReport(range, "Dispatch");
 
@@ -454,7 +455,7 @@ syncRangeComplete (BREthereumBCSSyncRange child) {
 
     // If `child` does not have a `parent`, then we are at the top-level and completely complete.
     if (NULL == parent) {
-        eth_log ("BCS", "Sync: Done%s", "");
+        LOG (LL_INFO, ETH_BCS,, "Sync: Done%s", "");
         child->callback (child->context, child, NULL, child->head);
         return;
     }
@@ -648,7 +649,7 @@ bcsSyncStart (BREthereumBCSSync sync,
         node = lesGetNodePrefer (sync->les);
         // If still 'generic' (specifically NIL), skip this sync.
         if (LES_NODE_REFERENCE_NIL == node) {
-            eth_log ("BCS", "Sync: Start Skipped: No suitable nodes%s", "");
+            LOG (LL_INFO, ETH_BCS,, "Sync: Start Skipped: No suitable nodes%s", "");
             return;
         }
     }
@@ -722,9 +723,9 @@ bcsSyncStopInternal (BREthereumBCSSync sync,
                      const char *reason) {
     assert (NULL != sync->root);
 
-    eth_log ("BCS", "Sync: Stopped%s%s",
-             (NULL != reason ? ": " : ""),
-             (NULL != reason ? reason : ""));
+    LOG (LL_INFO, ETH_BCS,, "Sync: Stopped%s%s",
+         (NULL != reason ? ": " : ""),
+         (NULL != reason ? reason : ""));
 
     // Callback as if all is good.
     sync->callbackProgress (sync->context,

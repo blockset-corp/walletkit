@@ -261,6 +261,8 @@ target_sources (WalletKitCore
                 ${PROJECT_SOURCE_DIR}/src/support/BRKey.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRKeyECIES.c
                 ${PROJECT_SOURCE_DIR}/src/support/BRKeyECIES.h
+                ${PROJECT_SOURCE_DIR}/src/support/BRLog.c
+                ${PROJECT_SOURCE_DIR}/src/support/BRLog.h
                 ${PROJECT_SOURCE_DIR}/src/support/BROSCompat.c
                 ${PROJECT_SOURCE_DIR}/src/support/BROSCompat.h
                 ${PROJECT_SOURCE_DIR}/src/support/BRSet.c

@@ -26,6 +26,7 @@
 #include "BREthereumLESRandom.h"
 #include "BREthereumMessage.h"
 #include "BREthereumNode.h"
+#include "ethereum/util/BREthereumLog.h"
 
 #if !defined(LES_BOOTSTRAP_LCL_ONLY)
 #   if defined (LES_BOOTSTRAP_BRD_ONLY)
@@ -446,9 +447,9 @@ lesSeedQuery (BREthereumLESSeedContext *context) {
     BREthereumLES les = context->les;
 
     if (0 != res_init()) {
-        eth_log (LES_LOG_TOPIC, "Nodes '%s' Error: res_init(): '%s' / '%s'", context->seed,
-                 strerror (errno),
-                 hstrerror (h_errno));
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Nodes '%s' Error: res_init(): '%s' / '%s'", context->seed,
+             strerror (errno),
+             hstrerror (h_errno));
         return 1;
     }
 
@@ -456,15 +457,15 @@ lesSeedQuery (BREthereumLESSeedContext *context) {
     u_char *msgData = calloc (1, msgDataLength + 1);
 
     if (NULL == msgData) {
-        eth_log(LES_LOG_TOPIC, "Nodes '%s' Error: calloc", context->seed);
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Nodes '%s' Error: calloc", context->seed);
         return 1;
     }
 
     int msgCount = res_query (context->seed, ns_c_in, ns_t_txt, msgData, msgDataLength);
     if (msgCount < 0) {
-        eth_log (LES_LOG_TOPIC, "Nodes '%s' Error: res_query(): '%s' / '%s'", context->seed,
-                 strerror (errno),
-                 hstrerror (h_errno));
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Nodes '%s' Error: res_query(): '%s' / '%s'", context->seed,
+             strerror (errno),
+             hstrerror (h_errno));
         free (msgData);
         return 1;
     }
@@ -498,10 +499,10 @@ lesSeedQuery (BREthereumLESSeedContext *context) {
                 context->added += 1;
         }
         pthread_mutex_unlock(&les->lock);
-        eth_log(LES_LOG_TOPIC, "Nodes '%s': Found: %zu, Added: %zu", context->seed, context->tried, context->added);
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Nodes '%s': Found: %zu, Added: %zu", context->seed, context->tried, context->added);
     }
     else
-        eth_log(LES_LOG_TOPIC, "Nodes '%s': Required BRD Only: Added: 0", context->seed);
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Nodes '%s': Required BRD Only: Added: 0", context->seed);
 
     free (msgData);
     return 0;
@@ -632,7 +633,7 @@ lesCreate (BREthereumNetwork network,
 
 #if !defined(LES_BOOTSTRAP_LCL_ONLY)
     // Identify a set of initial nodes; first, use all the endpoints provided (based on `configs`)
-    eth_log (LES_LOG_TOPIC, "Nodes Provided    : %zu", (NULL == configs ? 0 : BRSetCount(configs)));
+    LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Nodes Provided    : %zu", (NULL == configs ? 0 : BRSetCount(configs)));
     if (NULL != configs)
         FOR_SET (BREthereumNodeConfig, config, configs)
             if (!bootstrapBRDOnly || NODE_PRIORITY_BRD == config->priority)
@@ -961,14 +962,14 @@ lesLogNodeActivate (BREthereumLES les,
     char desc[128];
 
     BREthereumNodeState state = ethNodeGetState(node, route);
-    eth_log (LES_LOG_TOPIC, "Conn: [ %s @ %3zu, %9s ]    %15s (%s)%s%s",
-             (ETHEREUM_NODE_ROUTE_TCP == route ? "TCP" : "UDP"),
-             array_count(les->activeNodesByRoute[route]),
-             path,
-             ethNodeEndpointGetHostname (ethNodeGetRemoteEndpoint(node)),
-             ethNodeStateDescribe (&state, desc),
-             (NULL == explain ? "" : " - "),
-             (NULL == explain ? "" : explain));
+    LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Conn: [ %s @ %3zu, %9s ]    %15s (%s)%s%s",
+         (ETHEREUM_NODE_ROUTE_TCP == route ? "TCP" : "UDP"),
+         array_count(les->activeNodesByRoute[route]),
+         path,
+         ethNodeEndpointGetHostname (ethNodeGetRemoteEndpoint(node)),
+         ethNodeStateDescribe (&state, desc),
+         (NULL == explain ? "" : " - "),
+         (NULL == explain ? "" : explain));
 }
 
 static void
@@ -1022,7 +1023,7 @@ lesDeactivateNodes (BREthereumLES les,
 static void
 lesHandleSelectError (BREthereumLES les,
                       int error) {
-    eth_log (LES_LOG_TOPIC, "Top-Level Select Error: %s", strerror(error));
+    LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Top-Level Select Error: %s", strerror(error));
 
     switch (error) {
         case EAGAIN:
@@ -1124,10 +1125,10 @@ lesThreadBootstrapSeeds (BREthereumLES les) {
     }
 
     // Report on the bootstrap results.
-    eth_log (LES_LOG_TOPIC, "Nodes Bootstrapped: %zu", bootstrappedEndpointsCount);
+    LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Nodes Bootstrapped: %zu", bootstrappedEndpointsCount);
     for (size_t index = 0; index < 5 && index < array_count(les->availableNodes); index++) {
         BREthereumDISNeighborEnode enode = neighborDISAsEnode (ethNodeEndpointGetDISNeighbor (ethNodeGetRemoteEndpoint (les->availableNodes[index])), 1);
-        eth_log (LES_LOG_TOPIC, "  @ %zu: %s", index, enode.chars);
+        LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "  @ %zu: %s", index, enode.chars);
     }
 }
 
@@ -1313,7 +1314,7 @@ lesThread (BREthereumLES les) {
         // We've been asked to 'clean' - which means 'reclaim memory if possible'.  We'll ask
         // all nodes to clean up; but, only the active ones will have much to do.
         if (les->theTimeToCleanIsNow) {
-            eth_log (LES_LOG_TOPIC, "Cleaning%s", "");
+            LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Cleaning%s", "");
             FOR_NODES(les, node)
                 ethNodeClean(node);
             rlpCoderReclaim(les->coder);
@@ -1326,7 +1327,7 @@ lesThread (BREthereumLES les) {
         // nodes, we can confidently report a 'status' as the new block header - rather than as
         // the genesis block, or other checkpoint we maintain.
         if (les->theTimeToUpdateBlockHeadIsNow) {
-            eth_log (LES_LOG_TOPIC, "Updating Status%s", "");
+            LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Updating Status%s", "");
 
             BREthereumP2PMessageStatus status = ethNodeEndpointGetStatus(les->localEndpoint);
             // Nothing can be holding the localEndpoint's status directly; all 'holders' are
@@ -1485,11 +1486,11 @@ lesThread (BREthereumLES les) {
 
     array_free (nodesToRemove);
 
-    eth_log (LES_LOG_TOPIC, "Stop: Nodes: %zu, Available: %zu, Connected: [%zu, %zu]",
-             BRSetCount(les->nodes),
-             array_count (les->availableNodes),
-             array_count (les->activeNodesByRoute[NODE_ROUTE_UDP]),
-             array_count (les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP]));
+    LOG (LL_INFO, ETH_LES_LOG_TOPIC,  "Stop: Nodes: %zu, Available: %zu, Connected: [%zu, %zu]",
+         BRSetCount(les->nodes),
+         array_count (les->availableNodes),
+         array_count (les->activeNodesByRoute[NODE_ROUTE_UDP]),
+         array_count (les->activeNodesByRoute[ETHEREUM_NODE_ROUTE_TCP]));
 
     // Callback on Node Config.  Create the set of configs based on the current node -in
     // particular the node's state.  When we load these configs (see lesCreate()) many of the

@@ -13,6 +13,7 @@
 #include "walletkit/WKHashP.h"
 #include "ethereum/blockchain/BREthereumNetwork.h"
 #include "ethereum/blockchain/BREthereumBlock.h"
+#include "ethereum/util/BREthereumLog.h"
 
 static WKNetworkETH
 wkNetworkCoerce (WKNetwork network) {
@@ -54,6 +55,8 @@ cyptoNetworkCreateETH (WKNetworkListener listener,
     bool useTestnet = (0 == strcmp ("testnet", desc));
     bool useRinkeby = (0 == strcmp ("rinkeby", desc));
 
+    LOG (LL_INFO, ETH_INIT, "Creating '%s' Ethereum Network", desc);
+    
     assert (isMainnet ? useMainnet : (useTestnet || useRinkeby));
     
     WKNetworkCreateContextETH contextETH = {

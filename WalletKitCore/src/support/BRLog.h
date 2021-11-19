@@ -89,10 +89,10 @@ typedef enum {
     
 } BRLogLevel;
 #define MAX_LEVELS          (LL_VERBOSE + 1)
-#define DEFAULT_LOG_LEVEL   (LL_WARN)
+#define DEFAULT_LOG_LEVEL   (LL_INFO)
 
 #define UNSPECIFIED_LOG_MOD     (NULL)
-#define MAX_LOG_MOD_NAME_LEN    (8)
+#define MAX_LOG_MOD_NAME_LEN    (16)
 #define MAX_LOG_ADDRESS_LEN     (2 * MAX_LOG_MOD_NAME_LEN + 1) // 'mod'_'submod'
 
 typedef struct BRLogModuleStruct {
@@ -104,7 +104,6 @@ typedef struct BRLogModuleStruct {
 // of all first order modules
 extern BRLogModule SYSTEM_LOG;
 
-void initLogSystem ();
 void registerLogModule  (   const char      *moduleName, 
                             BRLogModule     *module,
                             BRLogModule     *submodule);
@@ -141,9 +140,6 @@ extern BRLogModule mod##_##submod##_LOG
 
 /*******    Functional Appearance of Logging *******/
 
-// For toolkit wide adoption of logging
-#define INIT_LOG() initLogSystem();
-
 // For per-module registration of modules and submodules
 #define LOG_REGISTER_MODULE(mod) registerLogModule(#mod, & SYSTEM_LOG, & mod##_LOG)
 #define LOG_ADD_SUBMODULE(mod,submod) registerLogModule(#submod, & mod##_LOG, & mod##_##submod##_LOG)
@@ -155,9 +151,10 @@ extern BRLogModule mod##_##submod##_LOG
 // @param modOrSubmod The module or submodule name to log to
 // @param fmt The log format string
 // @param args ... variadac arguments
-#define LOG(lvl, modOrSubmod, fmt, ...)                                     \
-    assert (lvl < MAX_LEVELS);                                              \
-    if (modOrSubmod##_LOG->level >= lvl)                                    \
+#define LOG(lvl, modOrSubmod, fmt, ...)                                             \
+    assert (NULL != modOrSubmod##_LOG && "Log " #modOrSubmod " not registered!");   \
+    assert (lvl < MAX_LEVELS);                                                      \
+    if (modOrSubmod##_LOG->level >= lvl)                                            \
         doLog (lvl, modOrSubmod##_LOG, fmt, ##__VA_ARGS__); 
 
 // Set the new log level for any module or module and submodule, or module and all its

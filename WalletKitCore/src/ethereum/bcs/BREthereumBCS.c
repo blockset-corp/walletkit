@@ -13,6 +13,7 @@
 #include "support/BRArray.h"
 #include "support/BRSet.h"
 #include "BREthereumBCSPrivate.h"
+#include "ethereum/util/BREthereumLog.h"
 
 #define BCS_TRANSACTION_CHECK_STATUS_SECONDS   (7)
 
@@ -484,7 +485,7 @@ bcsReportInterestingBlocks (BREthereumBCS bcs,
                             // request id
                             BRArrayOf(uint64_t) blockNumbers) {
     assert (WK_SYNC_MODE_P2P_ONLY == bcs->mode || WK_SYNC_MODE_P2P_WITH_API_SYNC == bcs->mode);
-    eth_log ("BCS", "Report Interesting Blocks: %zu", array_count(blockNumbers));
+    LOG (LL_INFO, ETH_BCS, "Report Interesting Blocks: %zu", array_count(blockNumbers));
     for (size_t index = 0; index < array_count(blockNumbers); index++)
         lesProvideBlockHeaders (bcs->les,
                                 LES_NODE_REFERENCE_ANY,
@@ -627,9 +628,9 @@ bcsHandleStatus (BREthereumBCS bcs,
     // If we are not a P2P_* node, we won't handle announcements
     if (WK_SYNC_MODE_API_ONLY == bcs->mode || WK_SYNC_MODE_API_WITH_P2P_SEND == bcs->mode) {
 #if defined (BCS_REPORT_IGNORED_ANNOUNCE)
-        eth_log ("BCS", "Status %" PRIu64 " Ignored (not P2P) <== %s",
-                 headNumber,
-                 lesGetNodeHostname (bcs->les, node));
+        LOG (LL_INFO, ETH_BCS, "Status %" PRIu64 " Ignored (not P2P) <== %s",
+             headNumber,
+             lesGetNodeHostname (bcs->les, node));
 #endif
         return;
     }
@@ -653,9 +654,9 @@ bcsHandleAnnounce (BREthereumBCS bcs,
     // If we are not a P2P_* node, we won't handle announcements
     if (WK_SYNC_MODE_API_ONLY == bcs->mode || WK_SYNC_MODE_API_WITH_P2P_SEND == bcs->mode) {
 #if defined (BCS_REPORT_IGNORED_ANNOUNCE)
-        eth_log ("BCS", "Block %" PRIu64 " Ignored (not P2P) <== %s",
-                 headNumber,
-                 lesGetNodeHostname (bcs->les, node));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Ignored (not P2P) <== %s",
+             headNumber,
+             lesGetNodeHostname (bcs->les, node));
 #endif
         return;
     }
@@ -663,14 +664,14 @@ bcsHandleAnnounce (BREthereumBCS bcs,
     // If we are in the middle of a sync, we won't be reorganizing anything.
     if (ETHEREUM_BOOLEAN_IS_TRUE (bcsSyncIsActive(bcs->sync)) && 0 != reorgDepth) {
         reorgDepth = 0;
-        eth_log ("BCS", "ReorgDepth: %" PRIu64 " @ %" PRIu64 ": Ignored, in Sync", reorgDepth, headNumber);
+        LOG (LL_INFO, ETH_BCS, "ReorgDepth: %" PRIu64 " @ %" PRIu64 ": Ignored, in Sync", reorgDepth, headNumber);
     }
 
     // Reorg depth suggests that N blocks are wrong. We'll orphan all of them, request the next
     // block headers back in history by reorgDepth, and likely perform a sync to fill in the
     // missing headers.
     if (0 != reorgDepth) {
-        eth_log ("BCS", "ReorgDepth: %" PRIu64 " @ %" PRIu64, reorgDepth, headNumber);
+        LOG (LL_INFO, ETH_BCS, "ReorgDepth: %" PRIu64 " @ %" PRIu64, reorgDepth, headNumber);
         if (reorgDepth < BCS_REORG_LIMIT)
             bcsUnwindChain (bcs, reorgDepth, headNumber);
     }
@@ -695,7 +696,7 @@ bcsReclaimBlock (BREthereumBCS bcs,
                  int useLog) {
     BRSetRemove (bcs->orphans, block);  // needed, or overly cautious?
     BRSetRemove (bcs->blocks,  block);
-    if (useLog) eth_log("BCS", "Block %" PRIu64 " Reclaimed", ethBlockGetNumber(block));
+    if (useLog) LOG(LL_INFO, ETH_BCS, "Block %" PRIu64 " Reclaimed", ethBlockGetNumber(block));
 
     // TODO: Avoid dangling references - need to identify one/some first.
 
@@ -731,9 +732,9 @@ bcsSaveBlocks (BREthereumBCS bcs) {
 
     bcs->listener.saveBlocksCallback (bcs->listener.context, blocks);
     
-    eth_log("BCS", "Blocks {%" PRIu64 ", %" PRIu64 "} Saved",
-            ethBlockGetNumber(bcs->chainTail),
-            ethBlockGetNumber(ethBlockGetNext(bcs->chain)));
+    LOG (LL_INFO, ETH_BCS, "Blocks {%" PRIu64 ", %" PRIu64 "} Saved",
+         ethBlockGetNumber(bcs->chainTail),
+         ethBlockGetNumber(ethBlockGetNext(bcs->chain)));
 }
 
 static void
@@ -762,9 +763,9 @@ bcsReclaimAndSaveBlocksIfAppropriate (BREthereumBCS bcs) {
         }
         ethBlockClrNext(bcs->chainTail);
 
-        eth_log("BCS", "Blocks {%" PRIu64 ", %" PRIu64 "} Reclaimed",
-                thisBlockNumber,
-                reclaimFromBlockNumber - 1);
+        LOG (LL_INFO, ETH_BCS, "Blocks {%" PRIu64 ", %" PRIu64 "} Reclaimed",
+             thisBlockNumber,
+             reclaimFromBlockNumber - 1);
 
         bcsSaveBlocks(bcs);
     }
@@ -783,7 +784,7 @@ bcsExtendChain (BREthereumBCS bcs,
     ethBlockSetNext(block, bcs->chain);
     bcs->chain = block;
 
-    eth_log("BCS", "Block %" PRIu64 " %s", ethBlockGetNumber(block), message);
+    LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " %s", ethBlockGetNumber(block), message);
 
     bcs->listener.ethBlockChainCallback (bcs->listener.context,
                                       ethBlockGetHash(block),
@@ -830,7 +831,7 @@ bcsPurgeOrphans (BREthereumBCS bcs,
             if (ethBlockGetNumber(orphan) < blockNumber &&
                 ETHEREUM_BOOLEAN_IS_TRUE (ethBlockHasStatusComplete(orphan))) {
                 BRSetRemove(bcs->orphans, orphan);
-                eth_log("BCS", "Block %" PRIu64 " Purged Orphan", ethBlockGetNumber(orphan));
+                LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Purged Orphan", ethBlockGetNumber(orphan));
 
                 // TODO: Don't release `orphan` if it is in `bcs->blocks`
 //                ethBlockRelease(orphan);
@@ -919,7 +920,7 @@ static BREthereumBlock
 bcsMakeOrphan (BREthereumBCS bcs,
                BREthereumBlock block) {
     BRSetAdd (bcs->orphans, block);
-    eth_log ("BCS", "Block %" PRIu64 " Newly Orphaned", ethBlockGetNumber(block));
+    LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Newly Orphaned", ethBlockGetNumber(block));
 
     // With `block` as an orphan we might have orphaned some transactions or logs.  We'll
     // deal with that later.
@@ -999,11 +1000,11 @@ bcsShowBlockForChain (BREthereumBCS bcs,
     BREthereumHashString parent, hash;
     ethHashFillString (ethBlockGetHash(block), hash);
     ethHashFillString (ethBlockHeaderGetParentHash(ethBlockGetHeader(block)), parent);
-    eth_log ("BCS", "%s: %" PRIu64 ", Hash: %s, Parent: %s",
-             preface,
-             ethBlockGetNumber (block),
-             hash,
-             parent);
+    LOG (LL_INFO, ETH_BCS, "%s: %" PRIu64 ", Hash: %s, Parent: %s",
+         preface,
+         ethBlockGetNumber (block),
+         hash,
+         parent);
 }
 extern void
 bcsOrphansShow (BREthereumBCS bcs,
@@ -1011,7 +1012,7 @@ bcsOrphansShow (BREthereumBCS bcs,
 //    BRArrayOf(BREthereumBlock) orphans;
 //    array_new (orphans, BRSetCount(bcs->orphans));
 
-    eth_log ("BCS", "Orphans%s", "");
+    LOG (LL_INFO, ETH_BCS, "Orphans%s", "");
     if (ETHEREUM_BOOLEAN_IS_TRUE (showChain) && NULL != bcs->chain) {
         BREthereumBlock next = ethBlockGetNext(bcs->chain);
         if (NULL != next)
@@ -1106,7 +1107,7 @@ bcsExtendTransactionsAndLogsForBlockIfAppropriate (BREthereumBCS bcs,
     if (ETHEREUM_BOOLEAN_IS_TRUE (ethBlockHasStatusComplete(block))) {
         if (bcsIsBlockValid(bcs, block)) bcsExtendTransactionsAndLogsForBlock (bcs, block);
         else if (bcsWantToHandleTransactionsAndLogs (bcs, block))
-            eth_log ("BCS", "Block %" PRIu64 " completed, not valid", ethBlockGetNumber(block));
+            LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " completed, not valid", ethBlockGetNumber(block));
     }
 }
 
@@ -1132,7 +1133,7 @@ bcsExtendChainIfPossible (BREthereumBCS bcs,
                                                        ethBlockGetHeader(bcs->genesis),
                                                        bcs->pow))) {
 
-        eth_log("BCS", "Block %" PRIu64 " Inconsistent", ethBlockGetNumber(block));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Inconsistent", ethBlockGetNumber(block));
         // TODO: Can we release `block`?
         return;
     }
@@ -1155,7 +1156,7 @@ bcsExtendChainIfPossible (BREthereumBCS bcs,
         // ... if not a sync, then `block` is an orphan too.
         if (!isFromSync) {
             // try to chain.
-            eth_log ("BCS", "Chain Try%s", "");
+            LOG (LL_INFO, ETH_BCS, "Chain Try%s", "");
             bcsChainThenPurgeOrphans (bcs);
 
             // Add it to the set of orphans and RETURN (non-local exit).
@@ -1198,7 +1199,7 @@ bcsExtendChainIfPossible (BREthereumBCS bcs,
             // Adopt `block` as `chain`
             bcs->chain = bcs->chainTail = block;
             ethBlockClrNext(block);
-            eth_log("BCS", "Block %" PRIu64 " Chained (Sync)", ethBlockGetNumber(block));
+            LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Chained (Sync)", ethBlockGetNumber(block));
         }
     }
 
@@ -1292,14 +1293,14 @@ bcsHandleBlockHeaderInternal (BREthereumBCS bcs,
     // level (transactions, receipts, logs), could have changed and thus no processing is needed.
     BREthereumHash blockHash = ethBlockHeaderGetHash(header);
     if (NULL != BRSetGet(bcs->blocks, &blockHash)) {
-        eth_log("BCS", "Block %" PRIu64 " Ignored", ethBlockHeaderGetNumber(header));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Ignored", ethBlockHeaderGetNumber(header));
         ethBlockHeaderRelease(header);
         return;
     }
 
     // Ignore the header if it is not valid.
     if (ETHEREUM_BOOLEAN_IS_FALSE(ethBlockHeaderIsInternallyValid (header))) {
-        eth_log("BCS", "Block %" PRIu64 " Invalid", ethBlockHeaderGetNumber(header));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Invalid", ethBlockHeaderGetNumber(header));
         ethBlockHeaderRelease(header);
         return;
     }
@@ -1329,7 +1330,7 @@ bcsHandleBlockHeaderInternal (BREthereumBCS bcs,
         ethBlockReportStatusTransactionsRequest(block, BLOCK_REQUEST_PENDING);
         if (NULL == *bodiesHashes) array_new (*bodiesHashes, 200);
         array_add (*bodiesHashes, ethBlockGetHash(block));
-        eth_log("BCS", "Block %" PRIu64 " Needs Bodies", ethBlockGetNumber(block));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Needs Bodies", ethBlockGetNumber(block));
     }
 
     // Request transaction receipts, if needed.
@@ -1337,7 +1338,7 @@ bcsHandleBlockHeaderInternal (BREthereumBCS bcs,
         ethBlockReportStatusLogsRequest(block, BLOCK_REQUEST_PENDING);
         if (NULL == *receiptsHashes) array_new (*receiptsHashes, 200);
         array_add (*receiptsHashes, ethBlockGetHash(block));
-        eth_log("BCS", "Block %" PRIu64 " Needs Receipts", ethBlockGetNumber(block));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Needs Receipts", ethBlockGetNumber(block));
     }
 
     // Request account state, if needed.
@@ -1345,7 +1346,7 @@ bcsHandleBlockHeaderInternal (BREthereumBCS bcs,
         ethBlockReportStatusAccountStateRequest (block, BLOCK_REQUEST_PENDING);
         if (NULL == *accountsHashes ) array_new (*accountsHashes,  200);
         array_add (*accountsHashes, ethBlockGetHash(block));
-        eth_log("BCS", "Block %" PRIu64 " Needs AccountState", ethBlockGetNumber(block));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Needs AccountState", ethBlockGetNumber(block));
     }
 
     // Request header proof, if needed.
@@ -1353,7 +1354,7 @@ bcsHandleBlockHeaderInternal (BREthereumBCS bcs,
         ethBlockReportStatusHeaderProofRequest (block, BLOCK_REQUEST_PENDING);
         if (NULL == *proofNumbers) array_new (*proofNumbers, 20);
         array_add (*proofNumbers, ethBlockGetNumber(block));
-        eth_log("BCS", "Blook %" PRIu64 " Needs HeaderProof", ethBlockGetNumber(block));
+        LOG (LL_INFO, ETH_BCS, "Blook %" PRIu64 " Needs HeaderProof", ethBlockGetNumber(block));
     }
 
     // Chain 'block' - we'll do this before the block is fully constituted.  Once constituted,
@@ -1424,22 +1425,22 @@ bcsHandleAccountState (BREthereumBCS bcs,
     // Ensure we have a Block
     BREthereumBlock block = BRSetGet(bcs->blocks, &blockHash);
     if (NULL == block) {
-        eth_log ("BCS", "Block %" PRIu64 " Missed (Account)", (NULL == block ? UINT64_MAX : ethBlockGetNumber(block)));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Missed (Account)", (NULL == block ? UINT64_MAX : ethBlockGetNumber(block)));
         return;
     }
 
     // If the status has somehow errored, skip out with nothing more to do.
     if (ETHEREUM_BOOLEAN_IS_TRUE(ethBlockHasStatusError(block))) {
-        eth_log ("BCS", "Block %" PRIu64 " In Error (Account)", ethBlockGetNumber(block));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " In Error (Account)", ethBlockGetNumber(block));
         return;
     }
 
     // We must be in a 'account needed' status
     assert (ETHEREUM_BOOLEAN_IS_TRUE(ethBlockHasStatusAccountStateRequest(block, BLOCK_REQUEST_PENDING)));
 
-    eth_log("BCS", "Account %" PRIu64 " Nonce %" PRIu64 ", Balance XX",
-            ethBlockGetNumber(block),
-            ethAccountStateGetNonce(account));
+    LOG (LL_INFO, ETH_BCS, "Account %" PRIu64 " Nonce %" PRIu64 ", Balance XX",
+         ethBlockGetNumber(block),
+         ethAccountStateGetNonce(account));
 
     // Report the block status - we'll flag as HAS_ACCOUNT_STATE.
     ethBlockReportStatusAccountState(block, account);
@@ -1495,7 +1496,7 @@ bcsHandleBlockBody (BREthereumBCS bcs,
     // Ensure we have a Block
     BREthereumBlock block = BRSetGet(bcs->blocks, &blockHash);
     if (NULL == block) {
-        eth_log ("BCS", "Block %" PRIu64 " Missed (Bodies)", (NULL == block ? UINT64_MAX : ethBlockGetNumber(block)));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Missed (Bodies)", (NULL == block ? UINT64_MAX : ethBlockGetNumber(block)));
         bcsReleaseOmmersAndTransactionsFully(bcs, transactions, ommers);
         return;
     }
@@ -1505,7 +1506,7 @@ bcsHandleBlockBody (BREthereumBCS bcs,
 
     // If the status is some how in error, skip out with nothing more to do.
     if (ETHEREUM_BOOLEAN_IS_TRUE(ethBlockHasStatusError(block))) {
-        eth_log ("BCS", "Block %" PRIu64 " In Error (Bodies)", ethBlockGetNumber(block));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " In Error (Bodies)", ethBlockGetNumber(block));
         bcsReleaseOmmersAndTransactionsFully(bcs, transactions, ommers);
         return;
     }
@@ -1513,10 +1514,10 @@ bcsHandleBlockBody (BREthereumBCS bcs,
     // We must be in a 'bodies needed' status
     assert (ETHEREUM_BOOLEAN_IS_TRUE(ethBlockHasStatusTransactionsRequest(block, BLOCK_REQUEST_PENDING)));
 
-    eth_log("BCS", "Bodies %" PRIu64 " O:%2zu, T:%3zu",
-            ethBlockGetNumber(block),
-            array_count(ommers),
-            array_count(transactions));
+    LOG (LL_INFO, ETH_BCS, "Bodies %" PRIu64 " O:%2zu, T:%3zu",
+         ethBlockGetNumber(block),
+         array_count(ommers),
+         array_count(transactions));
 
     // Update `block` with the reported ommers and transactions.  Note that generally
     // these are not used.... but we take full ownership of the memory for ommers and transactions.
@@ -1537,8 +1538,8 @@ bcsHandleBlockBody (BREthereumBCS bcs,
         
         // If it is our transaction (as source or target), handle it.
         if (ETHEREUM_BOOLEAN_IS_TRUE(ethTransactionHasAddress(tx, bcs->address))) {
-            eth_log("BCS", "Bodies %" PRIu64 " Found Transaction at %zu",
-                    ethBlockGetNumber(block), i);
+            LOG (LL_INFO, ETH_BCS, "Bodies %" PRIu64 " Found Transaction at %zu",
+                 ethBlockGetNumber(block), i);
 
             // We'll need a copy of the transaction as the orginal transaction is held in `block`
             // and this transaction (the copy) will go into `needTransactions` for 'block status'
@@ -1633,7 +1634,7 @@ bcsHandleBlockProof (BREthereumBCS bcs,
     //
     // We really, really need to find the block and mark the block.  Can be multiple blocks...
     if (1 == uint256EQL (proof.totalDifficulty, UINT256_ZERO)) {
-        eth_log ("BCS", "Block %" PRIu64 " Proof Failed", number);
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Proof Failed", number);
         return;
     }
 
@@ -1641,7 +1642,7 @@ bcsHandleBlockProof (BREthereumBCS bcs,
 
     BREthereumBlock block = BRSetGet(bcs->blocks, &blockHash);
     if (NULL == block) {
-        eth_log ("BCS", "Block %" PRIu64 " Missed (Proof)", number);
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Missed (Proof)", number);
         return;
     }
 
@@ -1658,7 +1659,7 @@ bcsHandleBlockProof (BREthereumBCS bcs,
     // ... otherwise, if the difficulties do not match
     else if (0 == uint256EQL (ethBlockGetTotalDifficulty (block), proof.totalDifficulty)) {
         // TODO: This SHOULD indicate a problem...
-        eth_log ("BCS", "Block %" PRIu64 " Overwrite Difficulty (Proof)", number);
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Overwrite Difficulty (Proof)", number);
         ethBlockSetTotalDifficulty (block, proof.totalDifficulty);
     }
 
@@ -1721,14 +1722,14 @@ bcsHandleTransactionReceipts (BREthereumBCS bcs,
     // Ensure we have a Block
     BREthereumBlock block = BRSetGet(bcs->blocks, &blockHash);
     if (NULL == block) {
-        eth_log ("BCS", "Block %" PRIu64 " Missed (Receipts)", (NULL == block ? UINT64_MAX : ethBlockGetNumber(block)));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Missed (Receipts)", (NULL == block ? UINT64_MAX : ethBlockGetNumber(block)));
         bcsReleaseReceiptsFully(bcs, receipts);
         return;
     }
 
     // If the status has some how errored, skip out with nothing more to do.
     if (ETHEREUM_BOOLEAN_IS_TRUE(ethBlockHasStatusError(block))) {
-        eth_log ("BCS", "Block %" PRIu64 " In Error (Receipts)", ethBlockGetNumber(block));
+        LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " In Error (Receipts)", ethBlockGetNumber(block));
         bcsReleaseReceiptsFully(bcs, receipts);
         return;
     }
@@ -1736,9 +1737,9 @@ bcsHandleTransactionReceipts (BREthereumBCS bcs,
     // We must be in a 'receipts needed' status
     assert (ETHEREUM_BOOLEAN_IS_TRUE(ethBlockHasStatusLogsRequest(block, BLOCK_REQUEST_PENDING)));
 
-    eth_log("BCS", "Receipts %" PRIu64 " Count %zu",
-            ethBlockGetNumber(block),
-            array_count(receipts));
+    LOG (LL_INFO, ETH_BCS, "Receipts %" PRIu64 " Count %zu",
+         ethBlockGetNumber(block),
+         array_count(receipts));
 
     BREthereumLog *neededLogs = NULL;
     BREthereumHash emptyHash = ETHEREUM_EMPTY_HASH_INIT;
@@ -1756,8 +1757,8 @@ bcsHandleTransactionReceipts (BREthereumBCS bcs,
 
                 // If `log` topics match our address....
                 if (ETHEREUM_BOOLEAN_IS_TRUE (ethLogMatchesAddress(log, bcs->address, ETHEREUM_BOOLEAN_TRUE))) {
-                    eth_log("BCS", "Receipts %" PRIu64 " Found Log at (%zu, %zu)",
-                            ethBlockGetNumber(block), ti, li);
+                    LOG (LL_INFO, ETH_BCS, "Receipts %" PRIu64 " Found Log at (%zu, %zu)",
+                         ethBlockGetNumber(block), ti, li);
 
                     // We'll need a copy of the log as this log will be added to the
                     // transaction status - which must be distinct from the receipts.
@@ -1818,7 +1819,7 @@ bcsHandleTransactionReceipts (BREthereumBCS bcs,
                                       (BREthereumLESProvisionContext) bcs,
                                       (BREthereumLESProvisionCallback) bcsSignalProvision,
                                       ethBlockGetHash(block));
-            // eth_log("BCS", "Block %" PRIu64 " Needs Bodies (for Logs)", ethBlockGetNumber(block));
+            // LOG (LL_INFO, ETH_BCS, "Block %" PRIu64 " Needs Bodies (for Logs)", ethBlockGetNumber(block));
         }
 
         // 2) We want a header proof too; to ensure a valid block w/ transactions + logs.
@@ -1932,7 +1933,7 @@ bcsHandleTransactionStatus (BREthereumBCS bcs,
     BREthereumTransaction transaction = BRSetGet(bcs->transactions, &transactionHash);
     if (NULL == transaction) return;
 
-    // Get the hash string - soley for eth_log() output.
+    // Get the hash string - soley for LOG() output.
     BREthereumHashString hashString;
     ethHashFillString(transactionHash, hashString);
 
@@ -1947,7 +1948,7 @@ bcsHandleTransactionStatus (BREthereumBCS bcs,
 
         case TRANSACTION_STATUS_UNKNOWN:
             // If the status is unknown, then `node` has *nothing* to offer; skip out.
-            eth_log("BCS", "Transaction: \"%s\", Status: %d, Ignored", hashString, status.type);
+            LOG (LL_INFO, ETH_BCS, "Transaction: \"%s\", Status: %d, Ignored", hashString, status.type);
             return;
 
         case TRANSACTION_STATUS_QUEUED:
@@ -1986,12 +1987,12 @@ bcsHandleTransactionStatus (BREthereumBCS bcs,
     if (needStatus) {
         // Update the transaction status and signal
         ethTransactionSetStatus (transaction, status);
-        eth_log("BCS", "Transaction: \"%s\", Status: %d, Pending: %s%s%s",
-                hashString,
-                status.type,
-                (-1 != bcsLookupPendingTransaction (bcs, transactionHash) ? "Yes" : "No"),
-                (TRANSACTION_STATUS_ERRORED == status.type ? ", Error: " : ""),
-                (TRANSACTION_STATUS_ERRORED == status.type ? ethTransactionGetErrorName(status.u.errored.type) : ""));
+        LOG (LL_INFO, ETH_BCS, "Transaction: \"%s\", Status: %d, Pending: %s%s%s",
+             hashString,
+             status.type,
+             (-1 != bcsLookupPendingTransaction (bcs, transactionHash) ? "Yes" : "No"),
+             (TRANSACTION_STATUS_ERRORED == status.type ? ", Error: " : ""),
+             (TRANSACTION_STATUS_ERRORED == status.type ? ethTransactionGetErrorName(status.u.errored.type) : ""));
 
         bcsSignalTransaction(bcs, ethTransactionCopy(transaction));
 
@@ -2001,12 +2002,12 @@ bcsHandleTransactionStatus (BREthereumBCS bcs,
             for (size_t index = 0; index < array_count(logs); index++) {
                 ethLogSetStatus (logs[index], status);
                 ethHashFillString (ethLogGetHash(logs[index]), hashString);
-                eth_log("BCS", "Log: \"%s\", Status: %d, Pending: %s%s%s",
-                        hashString,
-                        status.type,
-                        (-1 != bcsLookupPendingTransaction (bcs, transactionHash) ? "Yes" : "No"),
-                        (TRANSACTION_STATUS_ERRORED == status.type ? ", Error: " : ""),
-                        (TRANSACTION_STATUS_ERRORED == status.type ? ethTransactionGetErrorName(status.u.errored.type) : ""));
+                LOG (LL_INFO, ETH_BCS, "Log: \"%s\", Status: %d, Pending: %s%s%s",
+                     hashString,
+                     status.type,
+                     (-1 != bcsLookupPendingTransaction (bcs, transactionHash) ? "Yes" : "No"),
+                     (TRANSACTION_STATUS_ERRORED == status.type ? ", Error: " : ""),
+                     (TRANSACTION_STATUS_ERRORED == status.type ? ethTransactionGetErrorName(status.u.errored.type) : ""));
                 bcsSignalLog (bcs, logs[index]);
             }
             array_free (logs);
@@ -2217,7 +2218,7 @@ bcsHandleNodes (BREthereumBCS bcs,
                 BRArrayOf(BREthereumNodeConfig) peers) {
     size_t peersCount = array_count(peers);
     bcs->listener.savePeersCallback (bcs->listener.context, peers);
-    eth_log("BCS", "Peers %zu Saved", peersCount);
+    LOG (LL_INFO, ETH_BCS, "Peers %zu Saved", peersCount);
 }
 
 static void
@@ -2295,7 +2296,7 @@ bcsHandleProvision (BREthereumBCS bcs,
                                        provision);
                     needProvisionRelease = 0;
 
-                    eth_log ("BCS", "Resubmitted Provision: %zu: %s",
+                    LOG (LL_INFO, ETH_BCS, "Resubmitted Provision: %zu: %s",
                              provision->identifier,
                              ethProvisionGetTypeName(provision->type));
                     break;

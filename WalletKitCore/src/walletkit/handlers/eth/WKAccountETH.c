@@ -11,10 +11,25 @@
 
 #include "WKETH.h"
 
+#define MACRO_GENERATION
+#include "ethereum/util/BREthereumLog.h"
+
+static pthread_once_t initETHLogsOnce = PTHREAD_ONCE_INIT;
+static void initializeEthereumLogs() {
+    LOG_REGISTER_MODULE(ETH);
+    LOG_ADD_SUBMODULE(ETH,INIT);
+    LOG_ADD_SUBMODULE(ETH,BCS);
+    LOG_ADD_SUBMODULE(ETH,MEM);
+    LOG_ADD_SUBMODULE(ETH,SHOW);
+    LOG_ADD_SUBMODULE(ETH,LES_LOG_TOPIC);
+}
+
 static WKAccountDetails
 wkAccountCreateFromSeedETH(
     WKBoolean   isMainnet,
     UInt512     seed    ) {
+    
+    pthread_once (&initETHLogsOnce, initializeEthereumLogs);
     return ethAccountCreateWithBIP32Seed(seed);
 }
 
@@ -28,6 +43,7 @@ wkAccountCreateFromBytesETH(
 
     assert (65 == len);
 
+    pthread_once (&initETHLogsOnce, initializeEthereumLogs);
     BRKeySetPubKey (&ethPublicKey, bytes, len);
     eth = ethAccountCreateWithPublicKey(ethPublicKey);
 

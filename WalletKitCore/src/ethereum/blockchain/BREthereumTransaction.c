@@ -12,6 +12,7 @@
 #include <string.h>
 #include <assert.h>
 #include "BREthereumTransaction.h"
+#include "ethereum/util/BREthereumLog.h"
 
 // #define TRANSACTION_LOG_ALLOC_COUNT
 
@@ -122,7 +123,7 @@ ethTransactionCreate(BREthereumAddress sourceAddress,
     ethSignatureClear (&transaction->signature, SIGNATURE_TYPE_RECOVERABLE_VRS_EIP);
 
 #if defined (TRANSACTION_LOG_ALLOC_COUNT)
-    eth_log ("MEM", "TX Create - Count: %d", ++transactionAllocCount);
+    LOG (LL_INFO, ETH_MEM, "TX Create - Count: %d", ++transactionAllocCount);
 #endif
     return transaction;
 }
@@ -134,7 +135,7 @@ ethTransactionCopy (BREthereumTransaction transaction) {
     copy->data = (NULL == transaction->data ? NULL : strdup(transaction->data));
 
 #if defined (TRANSACTION_LOG_ALLOC_COUNT)
-    eth_log ("MEM", "TX Copy - Count: %d", ++transactionAllocCount);
+    LOG (LL_INFO, ETH_MEM, "TX Copy - Count: %d", ++transactionAllocCount);
 #endif
 
     return copy;
@@ -145,7 +146,7 @@ ethTransactionRelease (BREthereumTransaction transaction) {
     if (NULL != transaction) {
         if (NULL != transaction->data) free (transaction->data);
 #if defined (TRANSACTION_LOG_ALLOC_COUNT)
-        eth_log ("MEM", "TX Release - Count: %d", --transactionAllocCount);
+        LOG (LL_INFO, ETH_MEM, "TX Release - Count: %d", --transactionAllocCount);
 #endif
         free (transaction);
     }
@@ -503,7 +504,7 @@ ethTransactionRlpDecode (BRRlpItem item,
     }
 
 #if defined (TRANSACTION_LOG_ALLOC_COUNT)
-    eth_log ("MEM", "TX RLPDecode - Count: %d", ++transactionAllocCount);
+    LOG (LL_INFO, ETH_MEM, "TX RLPDecode - Count: %d", ++transactionAllocCount);
 #endif
     return transaction;
 }
@@ -644,18 +645,18 @@ ethTransactionShow (BREthereumTransaction transaction, const char *topic) {
     char *total  = ethEtherGetValueString (totalEth, ETHER);
     char *totalWEI = ethEtherGetValueString (totalEth, WEI);
 
-    eth_log (topic, "=== Transaction%s", "");
-    eth_log (topic, "    Hash  : %s", hash);
-    eth_log (topic, "    Nonce : %" PRIu64, ethTransactionGetNonce(transaction));
-    eth_log (topic, "    Source: %s", source);
-    eth_log (topic, "    Target: %s", target);
-    eth_log (topic, "    Amount: %s ETHER", amount);
-    eth_log (topic, "    GasPrc: %s GWEI", gasP);
-    eth_log (topic, "    GasLmt: %" PRIu64, ethTransactionGetGasLimit(transaction).amountOfGas);
-    eth_log (topic, "    Fee   : %s ETHER", fee);
-    eth_log (topic, "    Total : %s ETHER", total);
-    eth_log (topic, "    Total : %s WEI", totalWEI);
-    eth_log (topic, "    Data  : %s", transaction->data);
+    LOG (LL_INFO, ETH_SHOW, topic, "%s === Transaction", topic);
+    LOG (LL_INFO, ETH_SHOW, "%s    Hash  : %s", topic, hash);
+    LOG (LL_INFO, ETH_SHOW, "%s    Nonce : %" PRIu64, topic, ethTransactionGetNonce(transaction));
+    LOG (LL_INFO, ETH_SHOW, "%s    Source: %s", topic, source);
+    LOG (LL_INFO, ETH_SHOW, "%s    Target: %s", topic, target);
+    LOG (LL_INFO, ETH_SHOW, "%s    Amount: %s ETHER", topic, amount);
+    LOG (LL_INFO, ETH_SHOW, "%s    GasPrc: %s GWEI", topic, gasP);
+    LOG (LL_INFO, ETH_SHOW, "%s    GasLmt: %" PRIu64, topic, ethTransactionGetGasLimit(transaction).amountOfGas);
+    LOG (LL_INFO, ETH_SHOW, "%s    Fee   : %s ETHER", topic, fee);
+    LOG (LL_INFO, ETH_SHOW, "%s    Total : %s ETHER", topic, total);
+    LOG (LL_INFO, ETH_SHOW, "%s    Total : %s WEI", topic, totalWEI);
+    LOG (LL_INFO, ETH_SHOW, "%s    Data  : %s", topic, transaction->data);
 
     BREthereumContractFunction function = ethContractLookupFunctionForEncoding (ethContractERC20, transaction->data);
     if (NULL != function && ethFunctionERC20Transfer == function) {
@@ -666,10 +667,10 @@ ethTransactionShow (BREthereumTransaction transaction, const char *topic) {
 
         // BREthereumToken token = tokenLookup(target);
 
-        eth_log (topic, "    Token : %s", target); //  (NULL == token ? "???" : tokenGetSymbol(token)));
-        eth_log (topic, "    TokFnc: %s", "erc20 transfer");
-        eth_log (topic, "    TokAmt: %s", funcAmt);
-        eth_log (topic, "    TokAdr: %s", funcAddr);
+        LOG (LL_INFO, ETH_SHOW, "%s    Token : %s", topic, target); //  (NULL == token ? "???" : tokenGetSymbol(token)));
+        LOG (LL_INFO, ETH_SHOW, "%s    TokFnc: erc20 transfer", topic);
+        LOG (LL_INFO, ETH_SHOW, "%s    TokAmt: %s", topic, funcAmt);
+        LOG (LL_INFO, ETH_SHOW, "%s    TokAdr: %s", funcAddr);
 
         free (funcAmt); free (funcAddr);
 

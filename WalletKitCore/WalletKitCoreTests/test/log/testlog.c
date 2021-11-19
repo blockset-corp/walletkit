@@ -33,14 +33,13 @@ static void checkLevels(
     }
     releaseAllLogLevelsList(list);
 }
+
 int main (int argc, char* argv[]) {
-    
-    // Need only be done once, from anywhere
-    INIT_LOG();
     
     // Initialize a modular user of the log system, as perhaps 
     // within a blockchain
     LOG(LL_INFO, SYSTEM, "Initializing module");
+    // doALogBeforeRegistration();
     initModule();
     
     printf("------ERRR+WARN     -----\n");

@@ -11,6 +11,7 @@
 
 void initModule(void);
 void userFunction(void);
+void doALogBeforeRegistration(void);
 
 
 #endif /* Module_h */
