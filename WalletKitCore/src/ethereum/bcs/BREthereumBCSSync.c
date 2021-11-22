@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include "ethereum/les/BREthereumLES.h"
 #include "BREthereumBCSPrivate.h"
-#include "ethereum/util/BREthereumLog.h"
 
 /* Forward Declarations */
 static void

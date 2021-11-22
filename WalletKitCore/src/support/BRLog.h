@@ -120,7 +120,7 @@ void doLog              (   BRLogLevel      lvl,
  *                                      LOG(): 'mod'_'submod'
  */
 
-#ifdef MACRO_GENERATION
+#ifdef BR_LOG_MACRO_GENERATION
 
 #define LOG_DECLARE_MODULE(mod) \
 BRLogModule mod##_LOG

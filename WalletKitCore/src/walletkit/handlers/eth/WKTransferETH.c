@@ -13,7 +13,6 @@
 #include "walletkit/WKAmountP.h"
 
 #include "ethereum/blockchain/BREthereumTransaction.h"
-#include "ethereum/blockchain/BREthereumLog.h"
 #include "ethereum/contract/BREthereumExchange.h"
 
 static WKTransferDirection

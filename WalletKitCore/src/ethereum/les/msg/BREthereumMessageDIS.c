@@ -15,7 +15,6 @@
 #include "support/BRAssert.h"
 #include "ethereum/base/BREthereumSignature.h"
 #include "BREthereumMessageDIS.h"
-#include "ethereum/util/BREthereumLog.h"
 
 // #define NEED_TO_PRINT_DIS_NEIGHBOR_DETAILS
 

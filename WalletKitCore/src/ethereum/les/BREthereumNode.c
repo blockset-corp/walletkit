@@ -20,7 +20,6 @@
 #include "support/BRAssert.h"
 #include "BREthereumNode.h"
 #include "BREthereumLESFrameCoder.h"
-#include "ethereum/util/BREthereumLog.h"
 
 /// MARK: - Forward Declarations
 

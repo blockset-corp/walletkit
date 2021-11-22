@@ -11,7 +11,6 @@
 #include "support/BRAssert.h"
 #include "ethereum/blockchain/BREthereumBlockChain.h"
 #include "BREthereumMessageLES.h"
-#include "ethereum/util/BREthereumLog.h"
 
 // GETH Limits
 // MaxHeaderFetch           = 192 // Amount of block headers to be fetched per retrieval request

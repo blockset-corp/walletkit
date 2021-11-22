@@ -9,7 +9,6 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 
 #include "BREthereumMessageP2P.h"
-#include "ethereum/util/BREthereumLog.h"
 
 /// MARK: - P2P (Peer-to-Peer) Messages
 

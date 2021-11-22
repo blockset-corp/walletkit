@@ -226,7 +226,7 @@ wkWalletManagerInitialTransactionBundlesRecover (WKWalletManager manager) {
     }
 }
 
-#define MACRO_GENERATION
+#define BR_LOG_MACRO_GENERATION
 #include "WKLog.h"
 
 static pthread_once_t initWKLogsOnce = PTHREAD_ONCE_INIT;
@@ -234,7 +234,6 @@ static void initializeWalletKitLogs() {
     LOG_REGISTER_MODULE(WK);
     LOG_ADD_SUBMODULE(WK,CRY);
 }
-
 
 extern WKWalletManager
 wkWalletManagerAllocAndInit (size_t sizeInBytes,

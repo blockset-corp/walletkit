@@ -8,11 +8,11 @@
 // Acts in the capacity of a module registering 
 // the domain of all module logs...Only the module file that will
 // LOG_REGISTER_MODULE need to include the module's log
-// definition file with 'MACRO_GENERATION'. This should be done once
+// definition file with 'BR_LOG_MACRO_GENERATION'. This should be done once
 // ...somewhere for each module. This represents the
 // runtime aspect of the module logging setup
 
-#define MACRO_GENERATION
+#define BR_LOG_MACRO_GENERATION
 #include "module_logs.h"
 
 void initModule() {

@@ -9,10 +9,10 @@
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
 
+// Generation for log macros is required to
+// initialize log macros
+#define BR_LOG_MACRO_GENERATION
 #include "WKETH.h"
-
-#define MACRO_GENERATION
-#include "ethereum/util/BREthereumLog.h"
 
 static pthread_once_t initETHLogsOnce = PTHREAD_ONCE_INIT;
 static void initializeEthereumLogs() {

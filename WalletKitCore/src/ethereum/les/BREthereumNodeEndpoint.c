@@ -22,7 +22,6 @@
 #include <limits.h>
 #include "ethereum/util/BRUtil.h"
 #include "BREthereumNodeEndpoint.h"
-#include "ethereum/util/BREthereumLog.h"
 
 #ifndef HOST_NAME_MAX
 # if defined(_POSIX_HOST_NAME_MAX)
@@ -377,7 +376,7 @@ ethNodeEndpointClose (BREthereumNodeEndpoint endpoint,
         endpoint->sockets[route] = -1;
 
         if (needShutdown && shutdown (socket, SHUT_RDWR) < 0) {
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Socket %d (%s) Shutdown Error: %s", socket,
+            LOG (LL_INFO, ETH_LES, "Socket %d (%s) Shutdown Error: %s", socket,
                  ethNodeEndpointRouteGetName (route),
                  strerror(errno));
 
@@ -388,7 +387,7 @@ ethNodeEndpointClose (BREthereumNodeEndpoint endpoint,
             return 0 == close (socket) ? 0 : error;
         }
         if (close (socket) < 0) {
-            LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Socket %d (%s) Close Error: %s", socket,
+            LOG (LL_INFO, ETH_LES, "Socket %d (%s) Close Error: %s", socket,
                  ethNodeEndpointRouteGetName (route),
                  strerror(errno));
             return errno;
@@ -437,12 +436,12 @@ ethNodeEndpointRecvData (BREthereumNodeEndpoint endpoint,
         // !! DON'T MISS THIS !!
         *bytesCount = totalCount;
 #if defined (LES_LOG_RECV)
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "read (%zu bytes) from peer [%s], contents: %s", len, endpoint->hostname, "?");
+        LOG (LL_INFO, ETH_LES, "read (%zu bytes) from peer [%s], contents: %s", len, endpoint->hostname, "?");
 #endif
     }
 #if defined (LES_LOG_SEND_RECV_ERROR)
     else {
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Recv: [ %s, %15d ] => %15s %s%s",
+        LOG (LL_INFO, ETH_LES, "Recv: [ %s, %15d ] => %15s %s%s",
              ethNodeEndpointRouteGetName(route),
              (NODE_ROUTE_UDP == route ? endpoint->dis.node.portUDP : endpoint->dis.node.portTCP),
              endpoint->hostname,
@@ -483,12 +482,12 @@ ethNodeEndpointSendData (BREthereumNodeEndpoint endpoint,
 
     if (!error) {
 #if defined (LES_LOG_SEND)
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "sent (%zu bytes) to peer[%s], contents: %s", totalCount, endpoint->hostname, "?");
+        LOG (LL_INFO, ETH_LES, "sent (%zu bytes) to peer[%s], contents: %s", totalCount, endpoint->hostname, "?");
 #endif
     }
 #if defined (LES_LOG_SEND_RECV_ERROR)
     else {
-        LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Send: %s @ %5d => %15s %s%s",
+        LOG (LL_INFO, ETH_LES, "Send: %s @ %5d => %15s %s%s",
              ethNodeEndpointRouteGetName(route),
              (NODE_ROUTE_UDP == route ? endpoint->dis.node.portUDP : endpoint->dis.node.portTCP),
              endpoint->hostname,
@@ -539,7 +538,7 @@ ethNodeEndpointFillSockAddr (BREthereumNodeEndpoint endpoint,
 static int
 openSocketReportResult (BREthereumNodeEndpoint endpoint, int port, int type, int error) {
 #if defined (LES_LOG_REPORT_OPEN_SOCKET)
-    LOG (LL_INFO, ETH_LES_LOG_TOPIC, "Open: [ %s, %15d ] => %15s %s%s",
+    LOG (LL_INFO, ETH_LES, "Open: [ %s, %15d ] => %15s %s%s",
          (type == SOCK_STREAM ? "TCP" : "UDP"),
          port,
          endpoint->hostname,

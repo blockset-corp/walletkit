@@ -22,8 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 //  THE SOFTWARE.
 
-#ifndef BREthereumLog_h
-#define BREthereumLog_h
+#ifndef BREthLog_h
+#define BREthLog_h
 
 // Declaration of the space of this module's logs
 #include "support/BRLog.h"
@@ -34,4 +34,4 @@ LOG_DECLARE_SUBMODULE(ETH,MEM);
 LOG_DECLARE_SUBMODULE(ETH,SHOW);
 LOG_DECLARE_SUBMODULE(ETH,LES);
 
-#endif /* BREthereumLog_h */
+#endif /* BREthLog_h */

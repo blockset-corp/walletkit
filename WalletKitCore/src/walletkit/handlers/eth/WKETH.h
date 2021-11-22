@@ -16,7 +16,6 @@
 #include "ethereum/base/BREthereumBase.h"
 #include "ethereum/blockchain/BREthereumAccount.h"
 #include "ethereum/blockchain/BREthereumTransaction.h"
-#include "ethereum/blockchain/BREthereumLog.h"
 #include "ethereum/contract/BREthereumExchange.h"
 
 #ifdef __cplusplus

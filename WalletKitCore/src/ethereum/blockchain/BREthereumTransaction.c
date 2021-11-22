@@ -12,7 +12,6 @@
 #include <string.h>
 #include <assert.h>
 #include "BREthereumTransaction.h"
-#include "ethereum/util/BREthereumLog.h"
 
 // #define TRANSACTION_LOG_ALLOC_COUNT
 

@@ -13,7 +13,6 @@
 #include "support/BRArray.h"
 #include "support/BRSet.h"
 #include "BREthereumBCSPrivate.h"
-#include "ethereum/util/BREthereumLog.h"
 
 #define BCS_TRANSACTION_CHECK_STATUS_SECONDS   (7)
 

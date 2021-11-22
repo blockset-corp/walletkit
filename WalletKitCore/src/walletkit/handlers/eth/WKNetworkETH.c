@@ -11,9 +11,9 @@
 #include "WKETH.h"
 #include "walletkit/WKAmountP.h"
 #include "walletkit/WKHashP.h"
+#include "ethereum/base/BREthereumBase.h"
 #include "ethereum/blockchain/BREthereumNetwork.h"
 #include "ethereum/blockchain/BREthereumBlock.h"
-#include "ethereum/util/BREthereumLog.h"
 
 static WKNetworkETH
 wkNetworkCoerce (WKNetwork network) {

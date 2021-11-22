@@ -15,7 +15,6 @@
 #include "ethereum/base/BREthereumLogic.h"
 #include "BREthereumBlock.h"
 #include "BREthereumLog.h"
-#include "ethereum/util/BREthereumLog.h"
 
 // When looking for a block checkpoint based on a timestamp, back up by this much to ensure
 // we don't miss the account's initial block.
