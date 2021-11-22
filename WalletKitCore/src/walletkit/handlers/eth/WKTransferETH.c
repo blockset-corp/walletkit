@@ -27,6 +27,51 @@ wkTransferCoerceETH (WKTransfer transfer) {
     return (WKTransferETH) transfer;
 }
 
+static bool
+wkTransferExtractIncludeStatusFromStatusETH (BREthereumTransactionStatus status,
+                                             WKTransferIncludeStatus *includeStatus) {
+    uint64_t success;
+    if (!ethTransactionStatusExtractIncluded (&status, NULL, NULL, NULL, NULL, NULL, &success)) return false;
+
+    if (NULL != includeStatus) {
+        *includeStatus = (success
+                          ? wkTransferIncludeStatusCreateSuccess ()
+                          : wkTransferIncludeStatusCreateFailure (WK_TRANSFER_INCLUDE_STATUS_FAILURE_UNKNOWN, NULL));
+    }
+
+    return true;
+}
+
+static bool
+wkTransferExtractSubmitErrorFromStatusETH (BREthereumTransactionStatus status,
+                                        WKTransferSubmitError *error) {
+    BREthereumTransactionErrorType errorType;
+    char *details;
+
+    if (!ethTransactionStatusExtractErrored (&status, &errorType, &details)) return false;
+
+    if (NULL != error) {
+        WKTransferSubmitErrorType submitType;
+
+        switch (errorType) {
+            case TRANSACTION_ERROR_INVALID_SIGNATURE: submitType = WK_TRANSFER_SUBMIT_ERROR_SIGNATURE; break;
+            case TRANSACTION_ERROR_NONCE_TOO_LOW:     submitType = WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW; break;
+            case TRANSACTION_ERROR_BALANCE_TOO_LOW:   submitType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_BALANCE; break;
+            case TRANSACTION_ERROR_GAS_PRICE_TOO_LOW: submitType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_FEE; break;
+            case TRANSACTION_ERROR_GAS_TOO_LOW:       submitType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT; break;
+            case TRANSACTION_ERROR_REPLACEMENT_UNDER_PRICED: submitType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION; break;
+            case TRANSACTION_ERROR_DROPPED:           submitType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED; break;
+            case TRANSACTION_ERROR_ALREADY_KNOWN:     submitType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_DUPLICATE; break;
+            case TRANSACTION_ERROR_UNKNOWN:           submitType = WK_TRANSFER_SUBMIT_ERROR_UNKNOWN; break;
+        }
+
+        *error = wkTransferSubmitErrorCreate (submitType, details);
+    }
+    free (details);
+
+    return true;
+}
+
 extern WKTransferState
 wkTransferDeriveStateETH (BREthereumTransactionStatus status,
                               WKFeeBasis feeBasis) {
@@ -37,19 +82,25 @@ wkTransferDeriveStateETH (BREthereumTransactionStatus status,
         case TRANSACTION_STATUS_PENDING:
             return wkTransferStateInit (WK_TRANSFER_STATE_SUBMITTED);
 
-        case TRANSACTION_STATUS_INCLUDED:
-            return wkTransferStateIncludedInit (status.u.included.blockNumber,
-                                                    status.u.included.transactionIndex,
-                                                    status.u.included.blockTimestamp,
-                                                    wkFeeBasisTake (feeBasis),
-                                                    AS_WK_BOOLEAN (status.u.included.success),
-                                                    NULL);
-            break;
+        case TRANSACTION_STATUS_INCLUDED: {
+            WKTransferIncludeStatus includeStatus = wkTransferIncludeStatusCreateSuccess();
 
-        case TRANSACTION_STATUS_ERRORED:
-            return wkTransferStateErroredInit((WKTransferSubmitError) {
-                WK_TRANSFER_SUBMIT_ERROR_UNKNOWN
-            });
+            // If 'included w/ error' fill `error`.
+            wkTransferExtractIncludeStatusFromStatusETH (status, &includeStatus);
+            
+            return wkTransferStateIncludedInit (status.u.included.blockNumber,
+                                                status.u.included.transactionIndex,
+                                                status.u.included.blockTimestamp,
+                                                wkFeeBasisTake (feeBasis),
+                                                includeStatus);
+            break;
+        }
+
+        case TRANSACTION_STATUS_ERRORED: {
+            WKTransferSubmitError error;
+            assert (wkTransferExtractSubmitErrorFromStatusETH (status, &error));
+            return wkTransferStateErroredInit (error);
+        }
     }
 }
 

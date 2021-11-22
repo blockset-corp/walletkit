@@ -11,7 +11,7 @@ package com.blockset.walletkit;
 
 import androidx.annotation.Nullable;
 
-import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.errors.SystemClientError;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.primitives.UnsignedInteger;
 import com.google.common.primitives.UnsignedLong;
@@ -179,7 +179,7 @@ public interface SystemClient {
      * @param handler   The handler for receiving retrieved {@link Blockchain}'s
      */
     public void getBlockchains(boolean isMainnet,
-                               CompletionHandler<List<Blockchain>, QueryError> handler);
+                               CompletionHandler<List<Blockchain>, SystemClientError> handler);
 
     /**
      * Gets a specific blockchain as identified by the particular id.
@@ -189,7 +189,7 @@ public interface SystemClient {
      * @param handler      The handler for retrieved {@link Blockchain Blockchain}
      */
     public void getBlockchain(String blockchainId,
-                              CompletionHandler<Blockchain, QueryError> handler);
+                              CompletionHandler<Blockchain, SystemClientError> handler);
 
     /**
      * Gets a list of currencies for the particular main/testnet blockchain.
@@ -202,7 +202,7 @@ public interface SystemClient {
      */
     public void getCurrencies(@Nullable String blockchainId,
                               @Nullable Boolean isMainnet,
-                              CompletionHandler<List<Currency>, QueryError> handler);
+                              CompletionHandler<List<Currency>, SystemClientError> handler);
 
     /**
      * Gets a specific Currency designated by the currency identifier
@@ -212,7 +212,7 @@ public interface SystemClient {
      * @param handler    The handler for retrieved {@link com.blockset.walletkit.Currency Currency}
      */
     public void getCurrency(String currencyId,
-                            CompletionHandler<Currency, QueryError> handler);
+                            CompletionHandler<Currency, SystemClientError> handler);
 
     /**
      * Gets a list of transfers for a particular list of addresses within a
@@ -232,7 +232,7 @@ public interface SystemClient {
                              @Nullable UnsignedLong beginBlockNumber,
                              @Nullable UnsignedLong endBlockNumber,
                              @Nullable Integer maxPageSize,
-                             CompletionHandler<List<Transfer>, QueryError> handler);
+                             CompletionHandler<List<Transfer>, SystemClientError> handler);
 
     /**
      * Gets a specific transfer identified by the transfer identifier.
@@ -241,7 +241,7 @@ public interface SystemClient {
      * @param handler    The handler for retrieved {@link com.blockset.walletkit.Transfer Transfer}
      */
     public void getTransfer(String transferId,
-                            CompletionHandler<Transfer, QueryError> handler);
+                            CompletionHandler<Transfer, SystemClientError> handler);
 
     /**
      * Gets a list of transactions for the specified blockchain.
@@ -265,7 +265,7 @@ public interface SystemClient {
                                 boolean includeProof,
                                 boolean includeTransfers,
                                 @Nullable Integer maxPageSize,
-                                CompletionHandler<List<Transaction>, QueryError> handler);
+                                CompletionHandler<List<Transaction>, SystemClientError> handler);
 
     /**
      * Get a specific transaction referenced by transaction identifier.
@@ -280,7 +280,7 @@ public interface SystemClient {
                                boolean includeRaw,
                                boolean includeProof,
                                boolean includeTransfers,
-                               CompletionHandler<Transaction, QueryError> handler);
+                               CompletionHandler<Transaction, SystemClientError> handler);
 
     /**
      * Creates a transaction from raw data, on the specified blockchain
@@ -293,7 +293,7 @@ public interface SystemClient {
     public void createTransaction(String blockchainId,
                                   byte[] data,
                                   String identifier,
-                                  CompletionHandler<TransactionIdentifier, QueryError> handler);
+                                  CompletionHandler<TransactionIdentifier, SystemClientError> handler);
 
     /**
      * Estimate transaction fees for the specified blockchain
@@ -304,7 +304,7 @@ public interface SystemClient {
      */
     public void estimateTransactionFee(String blockchainId,
                                        byte[] data,
-                                       CompletionHandler<TransactionFee, QueryError> handler);
+                                       CompletionHandler<TransactionFee, SystemClientError> handler);
 
     /**
      * @param blockchainId     The blockchain to get blocks within
@@ -325,7 +325,7 @@ public interface SystemClient {
                           boolean includeTx,
                           boolean includeTxProof,
                           @Nullable Integer maxPageSize,
-                          CompletionHandler<List<Block>, QueryError> handler);
+                          CompletionHandler<List<Block>, SystemClientError> handler);
 
     /**
      *
@@ -343,14 +343,14 @@ public interface SystemClient {
                          boolean includeTx,
                          boolean includeTxRaw,
                          boolean includeTxProof,
-                         CompletionHandler<Block, QueryError> handler);
+                         CompletionHandler<Block, SystemClientError> handler);
 
     /**
      * Fetch all subscriptions
      *
      * @param handler The handler for found {@link Subscription}
      */
-    public void getSubscriptions(CompletionHandler<List<Subscription>, QueryError> handler);
+    public void getSubscriptions(CompletionHandler<List<Subscription>, SystemClientError> handler);
 
     /**
      * Fetch the identified subscription
@@ -360,7 +360,7 @@ public interface SystemClient {
      */
 
     public void getSubscription(String subscriptionId,
-                                CompletionHandler<Subscription, QueryError> handler);
+                                CompletionHandler<Subscription, SystemClientError> handler);
 
     /**
      * Gets the indicated subscription and creates a new subscription if this subscription
@@ -370,7 +370,7 @@ public interface SystemClient {
      * @param handler      The handler for found or created {@link Subscription}
      */
     public void getOrCreateSubscription(Subscription subscription,
-                                        CompletionHandler<Subscription, QueryError> handler);
+                                        CompletionHandler<Subscription, SystemClientError> handler);
 
     /**
      * Creates a new subscription
@@ -383,7 +383,7 @@ public interface SystemClient {
     public void createSubscription(String deviceId,
                                    SubscriptionEndpoint endpoint,
                                    List<SubscriptionCurrency> currencies,
-                                   CompletionHandler<Subscription, QueryError> handler);
+                                   CompletionHandler<Subscription, SystemClientError> handler);
 
     /**
      * Updates the specified subscription
@@ -392,7 +392,7 @@ public interface SystemClient {
      * @param handler      The handler for newly updated {@link Subscription}
      */
     public void updateSubscription(Subscription subscription,
-                                   CompletionHandler<Subscription, QueryError> handler);
+                                   CompletionHandler<Subscription, SystemClientError> handler);
 
     /**
      * Deletes the indicated subscription
@@ -401,7 +401,7 @@ public interface SystemClient {
      * @param handler        Handler for completion indication.
      */
     public void deleteSubscription(String subscriptionId,
-                                   CompletionHandler<Void, QueryError> handler);
+                                   CompletionHandler<Void, SystemClientError> handler);
 
 
     /**
@@ -412,7 +412,7 @@ public interface SystemClient {
      */
     public void getHederaAccount(String blockchainId,
                                  String publicKey,
-                                 CompletionHandler<List<HederaAccount>, QueryError> handler);
+                                 CompletionHandler<List<HederaAccount>, SystemClientError> handler);
 
     /**
      * Creates a new Hedera account
@@ -423,5 +423,5 @@ public interface SystemClient {
      */
     public void createHederaAccount(String blockchainId,
                                     String publicKey,
-                                    CompletionHandler<List<HederaAccount>, QueryError> handler);
+                                    CompletionHandler<List<HederaAccount>, SystemClientError> handler);
 }

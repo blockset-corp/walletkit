@@ -83,8 +83,7 @@ class WKTransferTests: WKSystemBaseTests {
                                                                     ? 1565974068
                                                                     : 1565974410),
                                                                 fee: nil,
-                                                                success: true,
-                                                                error: nil),
+                                                                status: TransferIncludeStatus.success()),
                             hash: "0xf6d9bca3d4346ce75c151d1d8f061d56ff25e41a89553544b80d316f7d9ccedc",
                             amount: UInt64(1000000))
         ]
@@ -388,8 +387,7 @@ class WKTransferTests: WKSystemBaseTests {
                                                  transactionIndex: 2,
                                                  timestamp: 3,
                                                  fee: nil,
-                                                 success: true,
-                                                 error: nil)
+                                                 status: TransferIncludeStatus.success())
         XCTAssertEqual(1, confirmation.blockNumber)
         XCTAssertEqual(2, confirmation.transactionIndex)
         XCTAssertEqual(3, confirmation.timestamp)

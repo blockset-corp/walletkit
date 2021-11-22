@@ -295,9 +295,9 @@ wkTransferDirectionFromBTC (uint64_t send, uint64_t recv, uint64_t fee) {
 
 private_extern OwnershipGiven WKTransferState
 wkTransferInitializeStateBTC (BRBitcoinTransaction *tid,
-                                  uint64_t blockNumber,
-                                  uint64_t blockTimestamp,
-                                  OwnershipKept WKFeeBasis feeBasis) {
+                              uint64_t blockNumber,
+                              uint64_t blockTimestamp,
+                              OwnershipKept WKFeeBasis feeBasis) {
     // Our Transfer flow is such that we want P2P and API modes to pass through the BRBitcoinWallet
     // callbacks, specifically TxAdded and TxUpdated.  Those functions don't have the resolution
     // to State that WKTransfers have (rightly or wrongly).  For BTC/etc a non-TX_CONFIRMED
@@ -306,11 +306,10 @@ wkTransferInitializeStateBTC (BRBitcoinTransaction *tid,
     // BTC/etc from Blockset.  Thus besides INCLUDED and SUBMITTED, we'll use CREATED.
     return (TX_UNCONFIRMED != blockNumber
             ? wkTransferStateIncludedInit (blockNumber,
-                                               0,
-                                               blockTimestamp,
-                                               feeBasis,
-                                               WK_TRUE,
-                                               NULL)
+                                           0,
+                                           blockTimestamp,
+                                           feeBasis,
+                                           wkTransferIncludeStatusCreateSuccess())
             : (btcTransactionIsSigned (tid)
                ? wkTransferStateInit (WK_TRANSFER_STATE_SUBMITTED)  // Optimistic
                : wkTransferStateInit (WK_TRANSFER_STATE_CREATED)));

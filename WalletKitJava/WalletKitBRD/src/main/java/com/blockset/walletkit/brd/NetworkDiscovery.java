@@ -8,7 +8,7 @@
 package com.blockset.walletkit.brd;
 
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.errors.SystemClientError;
 import com.blockset.walletkit.SystemClient.Blockchain;
 import com.blockset.walletkit.SystemClient.BlockchainFee;
 import com.blockset.walletkit.SystemClient.CurrencyDenomination;
@@ -169,7 +169,7 @@ final class NetworkDiscovery {
                                        boolean isMainnet,
                                        Function<Collection<Blockchain>, Void> func) {
         latch.countUp();
-        query.getBlockchains(isMainnet, new CompletionHandler<List<Blockchain>, QueryError>() {
+        query.getBlockchains(isMainnet, new CompletionHandler<List<Blockchain>, SystemClientError>() {
             @Override
             public void handleData(List<Blockchain> remote) {
                 try {
@@ -186,7 +186,7 @@ final class NetworkDiscovery {
             }
 
             @Override
-            public void handleError(QueryError error) {
+            public void handleError(SystemClientError error) {
                 try {
                     func.apply(Collections.emptyList());
                 } finally {
@@ -202,7 +202,7 @@ final class NetworkDiscovery {
                                       Collection<SystemClient.Currency> applicationCurrencies,
                                       Function<Collection<SystemClient.Currency>, Void> func) {
         latch.countUp();
-        query.getCurrencies(blockchainId, null, new CompletionHandler<List<SystemClient.Currency>, QueryError>() {
+        query.getCurrencies(blockchainId, null, new CompletionHandler<List<SystemClient.Currency>, SystemClientError>() {
             @Override
             public void handleData(List<SystemClient.Currency> newCurrencies) {
                 try {
@@ -223,7 +223,7 @@ final class NetworkDiscovery {
             }
 
             @Override
-            public void handleError(QueryError error) {
+            public void handleError(SystemClientError error) {
                 try {
                     // On error, use `apps` merged INTO defaults.  We merge into `defaults` to ensure that we get
                     // BTC, BCH, ETH, BRD and that they are correct (don't rely on the App).
@@ -249,7 +249,7 @@ final class NetworkDiscovery {
                                       Collection<SystemClient.Currency> applicationCurrencies,
                                       Function<Collection<SystemClient.Currency>, Void> func) {
         latch.countUp();
-        query.getCurrencies(null, mainnet, new CompletionHandler<List<SystemClient.Currency>, QueryError>() {
+        query.getCurrencies(null, mainnet, new CompletionHandler<List<SystemClient.Currency>, SystemClientError>() {
             @Override
             public void handleData(List<SystemClient.Currency> newCurrencies) {
                 try {
@@ -268,7 +268,7 @@ final class NetworkDiscovery {
             }
 
             @Override
-            public void handleError(QueryError error) {
+            public void handleError(SystemClientError error) {
                 try {
                     // On error, use `apps` merged INTO defaults.  We merge into `defaults` to ensure that we get
                     // BTC, BCH, ETH, BRD and that they are correct (don't rely on the App).

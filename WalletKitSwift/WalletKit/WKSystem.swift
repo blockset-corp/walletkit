@@ -716,13 +716,13 @@ public final class System {
                                                                  &denominationBundles);
                     }
                     defer { bundles.forEach { wkClientCurrencyBundleRelease($0) }}
-                    wkClientAnnounceCurrencies (self.core, &bundles, bundles.count)
+                    wkClientAnnounceCurrenciesSuccess (self.core, &bundles, bundles.count)
                     completion? (Result.success(self.networks))
                 },
 
                 failure: { (e) in
                     print ("SYS: GetCurrencies: Error: \(e)")
-                    //                    cwmAnnounceTransfers (cwm, sid, WK_FALSE, nil,     0)
+                    wkClientAnnounceCurrenciesFailure (self.core, System.makeClientErrorCore (e));
                     completion? (Result.failure(CurrencyUpdateError.currenciesUnavailable))
                 })
         }
@@ -1484,6 +1484,47 @@ extension System {
         return addresses
     }
 
+    internal static func makeClientSubmitErrorCore (_ error: SystemClientSubmissionError, details: String) -> WKClientError {
+        var submitErrorType: WKTransferSubmitErrorType!
+
+        switch error {
+        case .access:                      submitErrorType = WK_TRANSFER_SUBMIT_ERROR_UNKNOWN
+        case .account:                     submitErrorType = WK_TRANSFER_SUBMIT_ERROR_ACCOUNT
+        case .signature:                   submitErrorType = WK_TRANSFER_SUBMIT_ERROR_SIGNATURE
+        case .insufficientBalance:         submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_BALANCE
+        case .insufficientNetworkFee:      submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_FEE
+        case .insufficientNetworkCostUnit: submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT
+        case .insufficientFee:             submitErrorType = WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE
+        case .nonceTooLow:                 submitErrorType = WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW
+        case .nonceInvalid:                submitErrorType = WK_TRANSFER_SUBMIT_ERROR_NONCE_INVALID
+        case .transactionExpired:          submitErrorType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED
+        case .transactionDuplicate:        submitErrorType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_DUPLICATE
+        case .transaction:                 submitErrorType = WK_TRANSFER_SUBMIT_ERROR_TRANSACTION
+        case .unknown:                     submitErrorType = WK_TRANSFER_SUBMIT_ERROR_UNKNOWN
+        }
+
+        return wkClientErrorCreateSubmission (submitErrorType, details)
+    }
+
+    internal static func makeClientErrorCore (_ error: SystemClientError) -> WKClientError {
+        switch error {
+        case .badRequest(let details):
+            return wkClientErrorCreate (WK_CLIENT_ERROR_BAD_REQUEST, details)
+        case .permission:
+            return wkClientErrorCreate (WK_CLIENT_ERROR_PERMISSION, nil)
+        case .resource:
+            return wkClientErrorCreate (WK_CLIENT_ERROR_RESOURCE, nil)
+        case .badResponse(let details):
+            return wkClientErrorCreate (WK_CLIENT_ERROR_BAD_RESPONSE, details)
+        case let .submission(error, details):
+            return System.makeClientSubmitErrorCore (error, details: details)
+        case .unavailable:
+            return wkClientErrorCreate (WK_CLIENT_ERROR_UNAVAILABLE, nil)
+        case .lostConnectivity:
+            return wkClientErrorCreate(WK_CLIENT_ERROR_LOST_CONNECTIVITY, nil)
+        }
+    }
+
     internal static func canonicalizeTransactions (_ transactions: [SystemClient.Transaction]) -> [SystemClient.Transaction] {
         var uids = Set<String>()
 
@@ -1578,11 +1619,11 @@ extension System {
                     defer { wkWalletManagerGive (cwm!) }
                     res.resolve (
                         success: {
-                            wkClientAnnounceBlockNumber (cwm, sid, WK_TRUE,  $0.blockHeight ?? 0, $0.verifiedBlockHash)
+                            wkClientAnnounceBlockNumberSuccess (cwm, sid, $0.blockHeight ?? 0, $0.verifiedBlockHash)
                         },
                         failure: { (e) in
                             print ("SYS: GetBlockNumber: Error: \(e)")
-                            wkClientAnnounceBlockNumber (cwm, sid, WK_FALSE, 0, nil)
+                            wkClientAnnounceBlockNumberFailure (cwm, sid, System.makeClientErrorCore (e))
                         })
                 }},
 
@@ -1606,10 +1647,10 @@ extension System {
                     res.resolve(
                         success: {
                             var bundles: [WKClientTransactionBundle?] = System.canonicalizeTransactions ($0).map { System.makeTransactionBundle ($0) }
-                            wkClientAnnounceTransactions (cwm, sid, WK_TRUE,  &bundles, bundles.count) },
+                            wkClientAnnounceTransactionsSuccess (cwm, sid,  &bundles, bundles.count) },
                         failure: { (e) in
                             print ("SYS: GetTransactions: Error: \(e)")
-                            wkClientAnnounceTransactions (cwm, sid, WK_FALSE, nil, 0) })
+                            wkClientAnnounceTransactionsFailure (cwm, sid, System.makeClientErrorCore (e)) })
                 }},
 
             funcGetTransfers: { (context, cwm, sid, addresses, addressesCount, begBlockNumber, endBlockNumber) in
@@ -1632,10 +1673,10 @@ extension System {
                     res.resolve(
                         success: {
                             var bundles: [WKClientTransferBundle?]  = System.canonicalizeTransactions($0).flatMap { System.makeTransferBundles ($0, addresses: addresses) }
-                            wkClientAnnounceTransfers (cwm, sid, WK_TRUE,  &bundles, bundles.count) },
+                            wkClientAnnounceTransfersSuccess (cwm, sid,  &bundles, bundles.count) },
                         failure: { (e) in
                             print ("SYS: GetTransfers: Error: \(e)")
-                            wkClientAnnounceTransfers (cwm, sid, WK_FALSE, nil,     0) })
+                            wkClientAnnounceTransfersFailure (cwm, sid, System.makeClientErrorCore (e)) })
                 }},
 
             funcSubmitTransaction: { (context, cwm, sid, identifier, transactionBytes, transactionBytesLength) in
@@ -1654,10 +1695,10 @@ extension System {
                     defer { wkWalletManagerGive (cwm!) }
                     res.resolve(
                         success: { (ti) in
-                            wkClientAnnounceSubmitTransfer (cwm, sid, ti.identifier, ti.hash, WK_TRUE) },
+                            wkClientAnnounceSubmitTransferSuccess (cwm, sid, ti.identifier, ti.hash) },
                         failure: { (e) in
                             print ("SYS: SubmitTransaction: Error: \(e)")
-                            wkClientAnnounceSubmitTransfer (cwm, sid, nil, nil, WK_FALSE) })
+                            wkClientAnnounceSubmitTransferFailure (cwm, sid, System.makeClientErrorCore (e)) })
                 }},
 
             funcEstimateTransactionFee: { (context, cwm, sid, transactionBytes, transactionBytesLength, hashAsHex) in
@@ -1683,18 +1724,17 @@ extension System {
                                 .map { UnsafePointer<Int8>(strdup($0)) }
                             defer { metaValsPtr.forEach { wkMemoryFree (UnsafeMutablePointer(mutating: $0)) } }
                             
-                            wkClientAnnounceEstimateTransactionFee (cwm,
-                                                               sid,
-                                                               WK_TRUE,
-                                                               $0.costUnits,
-                                                               metaKeysPtr.count,
-                                                               &metaKeysPtr,
-                                                               &metaValsPtr)
+                            wkClientAnnounceEstimateTransactionFeeSuccess (cwm,
+                                                                           sid,
+                                                                           $0.costUnits,
+                                                                           metaKeysPtr.count,
+                                                                           &metaKeysPtr,
+                                                                           &metaValsPtr)
                             
                         },
                         failure: { (e) in
                             print ("SYS: EstimateTransactionFee: Error: \(e)")
-                            wkClientAnnounceEstimateTransactionFee (cwm, sid, WK_FALSE, 0, 0, nil, nil) })
+                            wkClientAnnounceEstimateTransactionFeeFailure (cwm, sid, System.makeClientErrorCore (e)) })
                 }}
         )
     }

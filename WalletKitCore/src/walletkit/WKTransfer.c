@@ -20,6 +20,107 @@
 
 #include "WKHandlersP.h"
 
+// MARK: - Transfer Include Error
+
+extern const char *
+wkTransferIncludeStatusTypeDescription (WKTransferIncludeStatusType type) {
+    static const char *descriptions[NUMBER_OF_TRANSFER_INCLUDED_STATUS_TYPES] = {
+        "WK_TRANSFER_INCLUDE_STATUS_SUCCESS",
+        "WK_TRANSFER_INCLUDE_STATUS_FAILURE INSUFFICIENT_NETWORK_COST_UNIT",
+        "WK_TRANSFER_INCLUDE_STATUS_FAILURE_REVERTED",
+        "WK_TRANSFER_INCLUDE_STATUS_FAILURE_UNKNOWN"
+    };
+    assert (type < NUMBER_OF_TRANSFER_INCLUDED_STATUS_TYPES);
+    return descriptions[type];
+}
+
+extern WKTransferIncludeStatus
+wkTransferIncludeStatusCreateSuccess (void) {
+    return (WKTransferIncludeStatus) {
+        WK_TRANSFER_INCLUDE_STATUS_SUCCESS,
+        { 0 }
+    };
+}
+
+extern WKTransferIncludeStatus
+wkTransferIncludeStatusCreateFailure (WKTransferIncludeStatusType type, const char *details) {
+    assert (WK_TRANSFER_INCLUDE_STATUS_SUCCESS != type);
+    WKTransferIncludeStatus status;
+
+    status.type = type;
+    status.details[0] = '\0';
+    if (NULL != details) {
+        strncpy (status.details, details, WK_TRANSFER_STATUS_DETAILS_LENGTH);
+        status.details[WK_TRANSFER_STATUS_DETAILS_LENGTH] = '\0';
+    }
+
+    return status;
+}
+
+extern const char *
+wkTransferIncludeStatusGetDetails (const WKTransferIncludeStatus *error) {
+    return error->details;
+}
+
+extern bool
+wkTransferIncludeStatusIsEqual (const WKTransferIncludeStatus *e1,
+                                const WKTransferIncludeStatus *e2) {
+    return (e1->type == e2->type && 0 == strcmp (e1->details, e2->details));
+}
+
+// MARK: Transfer Submit Error
+
+extern const char *
+wkTransferSubmitErrorTypeDescription (WKTransferSubmitErrorType type) {
+    static const char *descriptions[NUMBER_OF_TRANSFER_SUBMIT_ERROR_TYPES] = {
+        "WK_TRANSFER_SUBMIT_ERROR_ACCOUNT",
+        "WK_TRANSFER_SUBMIT_ERROR_SIGNATURE",
+        "WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_BALANCE",
+        "WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_FEE",
+        "WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_NETWORK_COST_UNIT",
+        "WK_TRANSFER_SUBMIT_ERROR_INSUFFICIENT_FEE",
+        "WK_TRANSFER_SUBMIT_ERROR_NONCE_TOO_LOW",
+        "WK_TRANSFER_SUBMIT_ERROR_NONCE_INVALID",
+        "WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_EXPIRED",
+        "WK_TRANSFER_SUBMIT_ERROR_TRANSACTION_DUPLICATE",
+        "WK_TRANSFER_SUBMIT_ERROR_TRANSACTION",
+        "WK_TRANSFER_SUBMIT_ERROR_UNKNOWN",
+        "WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_REQUEST",
+        "WK_TRANSFER_SUBMIT_ERROR_CLIENT_PERMISSION",
+        "WK_TRANSFER_SUBMIT_ERROR_CLIENT_RESOURCE",
+        "WK_TRANSFER_SUBMIT_ERROR_CLIENT_BAD_RESPONSE",
+        "WK_TRANSFER_SUBMIT_ERROR_CLIENT_UNAVAILABLE",
+        "WK_TRANSFER_SUBMIT_ERROR_LOST_CONNECTIVITY"
+    };
+    assert (type < NUMBER_OF_TRANSFER_SUBMIT_ERROR_TYPES);
+    return descriptions[type];
+}
+
+extern WKTransferSubmitError
+wkTransferSubmitErrorCreate (WKTransferSubmitErrorType type, const char *details) {
+    WKTransferSubmitError error;
+
+    error.type = type;
+    error.details[0] = '\0';
+    if (NULL != details) {
+        strncpy (error.details, details, WK_TRANSFER_STATUS_DETAILS_LENGTH);
+        error.details[WK_TRANSFER_STATUS_DETAILS_LENGTH] = '\0';
+    }
+
+    return error;
+}
+
+extern const char *
+wekTransferSubmitErrorGetDetails (const WKTransferSubmitError *error) {
+    return error->details;
+}
+
+extern bool
+wkTransferSubmitErrorIsEqual (const WKTransferSubmitError *e1,
+                              const WKTransferSubmitError *e2) {
+    return (e1->type == e2->type && 0 == strcmp (e1->details, e2->details));
+}
+
 /// MARK: - Transfer State Type
 
 IMPLEMENT_WK_GIVE_TAKE (WKTransferState, wkTransferState)
@@ -66,24 +167,17 @@ wkTransferStateInit (WKTransferStateType type) {
 
 extern WKTransferState
 wkTransferStateIncludedInit (uint64_t blockNumber,
-                                 uint64_t transactionIndex,
-                                 uint64_t blockTimestamp,
-                                 OwnershipKept WKFeeBasis feeBasis,
-                                 WKBoolean success,
-                                 const char *error) {
+                             uint64_t transactionIndex,
+                             uint64_t blockTimestamp,
+                             OwnershipKept WKFeeBasis feeBasis,
+                             WKTransferIncludeStatus status) {
     WKTransferState state = wkTransferStateCreate (WK_TRANSFER_STATE_INCLUDED);
 
     state->u.included.blockNumber = blockNumber;
     state->u.included.transactionIndex = transactionIndex;
     state->u.included.timestamp = blockTimestamp;
     state->u.included.feeBasis  = wkFeeBasisTake(feeBasis);
-    state->u.included.success   = success;
-
-    memset (state->u.included.error, 0, WK_TRANSFER_INCLUDED_ERROR_SIZE + 1);
-    if (WK_FALSE == success)
-        strlcpy (state->u.included.error,
-                 (NULL == error ? "unknown error" : error),
-                 WK_TRANSFER_INCLUDED_ERROR_SIZE + 1);
+    state->u.included.status    = status;
 
     return state;
 }
@@ -114,7 +208,7 @@ wkTransferStateRelease (WKTransferState state) {
 
 private_extern bool
 wkTransferStateIsEqual (const WKTransferState s1,
-                            const WKTransferState s2) {
+                        const WKTransferState s2) {
     if (s1->type != s2->type) return false;
 
     switch (s1->type) {
@@ -123,7 +217,7 @@ wkTransferStateIsEqual (const WKTransferState s1,
                     s1->u.included.transactionIndex == s2->u.included.transactionIndex &&
                     s1->u.included.timestamp        == s2->u.included.timestamp        &&
                     WK_TRUE == wkFeeBasisIsEqual (s1->u.included.feeBasis, s2->u.included.feeBasis) &&
-                    s1->u.included.success          == s2->u.included.success);
+                    wkTransferIncludeStatusIsEqual (&s1->u.included.status, &s2->u.included.status));
 
         case WK_TRANSFER_STATE_ERRORED:
             return wkTransferSubmitErrorIsEqual (&s1->u.errored.error, &s2->u.errored.error);
@@ -135,29 +229,25 @@ wkTransferStateIsEqual (const WKTransferState s1,
 
 extern bool
 wkTransferStateExtractIncluded (WKTransferState state,
-                                    uint64_t *blockNumber,
-                                    uint64_t *blockTimestamp,
-                                    uint64_t *transactionIndex,
-                                    WKFeeBasis *feeBasis,
-                                    WKBoolean  *success,
-                                    char **error) {
+                                uint64_t *blockNumber,
+                                uint64_t *blockTimestamp,
+                                uint64_t *transactionIndex,
+                                WKFeeBasis *feeBasis,
+                                WKTransferIncludeStatus *status) {
     if (WK_TRANSFER_STATE_INCLUDED != state->type) return false;
-
+    
     if (NULL != blockNumber     ) *blockNumber      = state->u.included.blockNumber;
     if (NULL != blockTimestamp  ) *blockTimestamp   = state->u.included.timestamp;
     if (NULL != transactionIndex) *transactionIndex = state->u.included.transactionIndex;
     if (NULL != feeBasis        ) *feeBasis         = wkFeeBasisTake(state->u.included.feeBasis);
-    if (NULL != success         ) *success          = state->u.included.success;
-    if (NULL != error           ) *error            = (WK_TRUE == state->u.included.success
-                                                       ? NULL
-                                                       : strdup (state->u.included.error));
-
+    if (NULL != status          ) *status           = state->u.included.status;
+    
     return true;
 }
 
 extern bool
 wkTransferStateExtractError (WKTransferState state,
-                                 WKTransferSubmitError *error) {
+                             WKTransferSubmitError *error) {
     if (WK_TRANSFER_STATE_ERRORED != state->type) return false;
 
     if (NULL != error) *error = state->u.errored.error;
@@ -281,10 +371,10 @@ wkTransferGetAmountDirectedInternal (WKTransfer transfer,
     WKAmount   amount;
 
     // If the transfer is included but has an error, then the amountDirected is zero.
-    WKBoolean success = WK_TRUE;
+    WKTransferIncludeStatus status = wkTransferIncludeStatusCreateSuccess();
     if (WK_TRUE == respectSuccess &&
-        wkTransferStateExtractIncluded (transfer->state, NULL, NULL, NULL, NULL, &success, NULL) &&
-        WK_FALSE == success)
+        wkTransferStateExtractIncluded (transfer->state, NULL, NULL, NULL, NULL, &status) &&
+        WK_TRANSFER_INCLUDE_STATUS_SUCCESS != status.type)
         return wkAmountCreateInteger(0, transfer->unit);
 
     switch (wkTransferGetDirection(transfer)) {
@@ -679,52 +769,6 @@ wkTransferEventTypeString (WKTransferEventType t) {
     return "<WK_TRANSFER_EVENT_TYPE_UNKNOWN>";
 }
 
-
-/// MARK: Transaction Submission Error
-
-// TODO(fix): This should be moved to a more appropriate file (BRTransfer.c/h?)
-
-extern WKTransferSubmitError
-wkTransferSubmitErrorUnknown(void) {
-    return (WKTransferSubmitError) {
-        WK_TRANSFER_SUBMIT_ERROR_UNKNOWN
-    };
-}
-
-extern WKTransferSubmitError
-wkTransferSubmitErrorPosix(int errnum) {
-    return (WKTransferSubmitError) {
-        WK_TRANSFER_SUBMIT_ERROR_POSIX,
-        { .posix = { errnum } }
-    };
-}
-
-extern bool
-wkTransferSubmitErrorIsEqual (const WKTransferSubmitError *e1,
-                                  const WKTransferSubmitError *e2) {
-    return (e1->type == e2->type &&
-            (e1->type != WK_TRANSFER_SUBMIT_ERROR_POSIX ||
-             e1->u.posix.errnum == e2->u.posix.errnum));
-}
-
-extern char *
-wkTransferSubmitErrorGetMessage (WKTransferSubmitError *e) {
-    char *message = NULL;
-
-    switch (e->type) {
-        case WK_TRANSFER_SUBMIT_ERROR_POSIX: {
-            if (NULL != (message = strerror (e->u.posix.errnum))) {
-                message = strdup (message);
-            }
-            break;
-        }
-        default: {
-            break;
-        }
-    }
-
-    return message;
-}
 
 
 /// MARK: - Transfer Attribute

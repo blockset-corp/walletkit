@@ -28,6 +28,19 @@
 extern "C" {
 #endif
 
+// MARK: - Error
+
+struct WKClientErrorRecord {
+    WKClientErrorType type;
+    char *details;
+    union {
+        WKTransferSubmitErrorType submitErrorType;
+    } u;
+};
+
+private_extern void
+wkClientErrorRelease (WKClientError error);
+
 // MARK: - Transaction Bundle
 
 struct WKClientTransactionBundleRecord {

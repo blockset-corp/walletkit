@@ -18,6 +18,56 @@
 extern "C" {
 #endif
 
+typedef enum {
+    /// The request itself was flawed.  For example, the URL could not be built.  This error is
+    /// an internal error and not recoverable, typically.
+    WK_CLIENT_ERROR_BAD_REQUEST,
+
+    /// The request was rejected w/ invalid permission.  For example, a 'client token' has expired
+    /// or is otherwise rejected.  This error might be recoverable is the User's permission is
+    /// reestablished.
+    WK_CLIENT_ERROR_PERMISSION,
+
+    /// The request was rejected having exceeded a resource (rateLimit, dataLimit, etc)
+    WK_CLIENT_ERROR_RESOURCE,
+
+    /// The response was flawed.  For example response data could not be parsed or was expected but
+    /// was not provided.  This might occur if the client's interface is inconsistent with the
+    /// WalletKit interface.
+    WK_CLIENT_ERROR_BAD_RESPONSE,
+
+    /// The request and response succeeded, but the submission ultimately failed.  For example,
+    /// the Client submitted a Transaction to the Ethereum network but the submission failed with
+    /// 'gas_too_low'
+    WK_CLIENT_ERROR_SUBMISSION,
+
+    /// The client is unavailable.  For example, the client is dead or gone.  It is possible that
+    /// the client returns and thus a retry might succeed.
+    WK_CLIENT_ERROR_UNAVAILABLE,
+
+    /// The client can't be reached because network connectivity has been lost
+    WK_CLIENT_ERROR_LOST_CONNECTIVITY,
+
+} WKClientErrorType;
+
+#define NUMBER_OF_CLIENT_ERROR_TYPES     (1 + WK_CLIENT_ERROR_LOST_CONNECTIVITY)
+
+extern const char *
+wkClientErrorTypeDescription (WKClientErrorType type);
+
+typedef struct WKClientErrorRecord *WKClientError;
+
+extern OwnershipGiven WKClientError
+wkClientErrorCreate (WKClientErrorType type, const char *details);
+
+extern OwnershipGiven WKClientError
+wkClientErrorCreateSubmission (WKTransferSubmitErrorType submitErrorType, const char *details);
+
+extern WKClientErrorType
+wkClientErrorGetType (WKClientError error);
+
+// ...
+
 /**
  * @brief A Client Context is an arbitrary ointer that is provided when a Cliet is created and
  * that is passed back in all client class.  This allows the client to establish the context for
@@ -50,11 +100,15 @@ typedef void
  * Announce the current block number and the verified block hash.
  */
 extern void
-wkClientAnnounceBlockNumber (OwnershipKept WKWalletManager cwm,
-                             OwnershipGiven WKClientCallbackState callbackState,
-                             WKBoolean success,
-                             WKBlockNumber blockNumber,
-                             const char *verifiedBlockHash);
+wkClientAnnounceBlockNumberSuccess (OwnershipKept WKWalletManager cwm,
+                                    OwnershipGiven WKClientCallbackState callbackState,
+                                    WKBlockNumber blockNumber,
+                                    const char *verifiedBlockHash);
+
+extern void
+wkClientAnnounceBlockNumberFailure (OwnershipKept WKWalletManager cwm,
+                                    OwnershipGiven WKClientCallbackState callbackState,
+                                    OwnershipGiven WKClientError error);
 
 // MARK: - Get Transactions
 
@@ -120,16 +174,19 @@ wkClientTransactionBundleCompareByBlockheightForSort (const void *tb1, const voi
     return wkClientTransactionBundleCompareByBlockheight (b1, b2);
 }
 
-
 /**
  * Announce the array of bundles with an overall success boolean
  */
 extern void
-wkClientAnnounceTransactions (OwnershipKept WKWalletManager cwm,
-                              OwnershipGiven WKClientCallbackState callbackState,
-                              WKBoolean success,
-                              WKClientTransactionBundle *bundles,
-                              size_t bundlesCount);
+wkClientAnnounceTransactionsSuccess (OwnershipKept WKWalletManager cwm,
+                                     OwnershipGiven WKClientCallbackState callbackState,
+                                     WKClientTransactionBundle *bundles,
+                                     size_t bundlesCount);
+
+extern void
+wkClientAnnounceTransactionsFailure (OwnershipKept WKWalletManager cwm,
+                                     OwnershipGiven WKClientCallbackState callbackState,
+                                     OwnershipGiven WKClientError error);
 
 // MARK: - Get Transfers
 
@@ -221,11 +278,15 @@ wkClientTransferBundleGetTransferState (const WKClientTransferBundle bundle,
  * Announce an array of transfer bundles.
  */
 extern void
-wkClientAnnounceTransfers (OwnershipKept WKWalletManager cwm,
-                           OwnershipGiven WKClientCallbackState callbackState,
-                           WKBoolean success,
-                           WKClientTransferBundle *bundles,
-                           size_t bundlesCount);
+wkClientAnnounceTransfersSuccess (OwnershipKept WKWalletManager cwm,
+                                  OwnershipGiven WKClientCallbackState callbackState,
+                                  WKClientTransferBundle *bundles,
+                                  size_t bundlesCount);
+
+extern void
+wkClientAnnounceTransfersFailure (OwnershipKept WKWalletManager cwm,
+                                  OwnershipGiven WKClientCallbackState callbackState,
+                                  WKClientError error);
 
 // MARK: - Submit Transaction
 
@@ -247,11 +308,15 @@ typedef void
  * Announce the result of the submission.
  */
 extern void
-wkClientAnnounceSubmitTransfer (OwnershipKept WKWalletManager cwm,
-                                OwnershipGiven WKClientCallbackState callbackState,
-                                OwnershipKept const char *identifier,
-                                OwnershipKept const char *hash,
-                                WKBoolean success);
+wkClientAnnounceSubmitTransferSuccess (OwnershipKept WKWalletManager cwm,
+                                       OwnershipGiven WKClientCallbackState callbackState,
+                                       OwnershipKept const char *identifier,
+                                       OwnershipKept const char *hash);
+
+extern void
+wkClientAnnounceSubmitTransferFailure (OwnershipKept WKWalletManager cwm,
+                                       OwnershipGiven WKClientCallbackState callbackState,
+                                       OwnershipGiven WKClientError error);
 
 // MARK: - Estimate Transaction Fee
 
@@ -273,13 +338,17 @@ typedef void
  * Announce the result of fee estimation
  */
 extern void
-wkClientAnnounceEstimateTransactionFee (OwnershipKept WKWalletManager cwm,
-                                        OwnershipGiven WKClientCallbackState callbackState,
-                                        WKBoolean success,
-                                        uint64_t costUnits,
-                                        size_t attributesCount,
-                                        OwnershipKept const char **attributeKeys,
-                                        OwnershipKept const char **attributeVals);
+wkClientAnnounceEstimateTransactionFeeSuccess (OwnershipKept WKWalletManager cwm,
+                                               OwnershipGiven WKClientCallbackState callbackState,
+                                               uint64_t costUnits,
+                                               size_t attributesCount,
+                                               OwnershipKept const char **attributeKeys,
+                                               OwnershipKept const char **attributeVals);
+
+extern void
+wkClientAnnounceEstimateTransactionFeeFailure (OwnershipKept WKWalletManager cwm,
+                                               OwnershipGiven WKClientCallbackState callbackState,
+                                               WKClientError error);
 
 // MARK: - Currency
 
@@ -326,9 +395,13 @@ wkClientCurrencyBundleRelease (WKClientCurrencyBundle bundle);
  * Announce the result of a `GetCurrency' callback (private).
  */
 extern void
-wkClientAnnounceCurrencies (WKSystem system,
-                            OwnershipGiven WKClientCurrencyBundle *bundles,
-                            size_t bundlesCount);
+wkClientAnnounceCurrenciesSuccess (WKSystem system,
+                                   OwnershipGiven WKClientCurrencyBundle *bundles,
+                                   size_t bundlesCount);
+
+extern void
+wkClientAnnounceCurrenciesFailure (WKSystem system,
+                                   WKClientError error);
 
 /**
  * @brief A Client implements a number of callback functions that provide WalletKit with

@@ -16,15 +16,17 @@ import android.net.ConnectivityManager;
 import android.os.StrictMode;
 
 import com.blockset.walletkit.brd.ApiProvider;
+import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
+
 import com.blockset.walletkit.Account;
 import com.blockset.walletkit.Api;
 import com.blockset.walletkit.DispatchingSystemListener;
 import com.blockset.walletkit.WalletManagerMode;
 import com.blockset.walletkit.SystemClient;
-import com.blockset.walletkit.brd.systemclient.BlocksetSystemClient;
 import com.blockset.walletkit.System;
 import com.blockset.walletkit.utility.AccountSpecification;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.guava.GuavaModule;
 
@@ -34,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -50,13 +53,15 @@ public class DemoApplication extends Application {
 
     public static final String EXTRA_BLOCKSETACCESS_TOKEN = "com.blockset.walletkit.demo.blocksetaccesstoken";
     public static final String EXTRA_BLOCKSETURL_TOKEN = "com.blockset.walletkit.demo.blockseturl";
-    public static final String EXTRA_ACCOUNT_SPEC = "com.blockset.walletkit.demo.account";
+    public static final String EXTRA_ACCOUNTS_SPEC = "com.blockset.walletkit.demo.accounts";
 
     private static final Logger Log = Logger.getLogger(DemoApplication.class.getName());
 
     private static final String EXTRA_WIPE = "WIPE";
 
     private static final boolean DEFAULT_WIPE = true;
+
+    private static final String DEFAULT_ACCOUNT = "original";
 
     private static DemoApplication instance;
 
@@ -73,8 +78,8 @@ public class DemoApplication extends Application {
     private Set<String> registerCurrencyCodes;
     private AtomicBoolean runOnce = new AtomicBoolean(false);
 
-    public static void initialize(Activity launchingActivity) {
-        instance.initFromLaunchIntent(launchingActivity.getIntent());
+    public static int initialize(Activity launchingActivity) {
+        return instance.initFromLaunchIntent(launchingActivity.getIntent());
     }
 
     public static Context getContext() {
@@ -112,20 +117,29 @@ public class DemoApplication extends Application {
         StrictMode.enableDefaults();
     }
 
-    private void initFromLaunchIntent(Intent intent) {
+    private int initFromLaunchIntent(Intent intent) {
+        int accountIdx = -1;
         if (!runOnce.getAndSet(true)) {
             Logging.initialize(Level.FINE);
 
-            if (intent.hasExtra(EXTRA_ACCOUNT_SPEC)) {
+            if (intent.hasExtra(EXTRA_ACCOUNTS_SPEC)) {
                 Api.initialize(ApiProvider.getInstance());
 
 
                 ObjectMapper mapper = new ObjectMapper();
                 mapper.registerModule(new GuavaModule());  // Must include for google.Optional
-                String acctSpecJson = intent.getStringExtra(EXTRA_ACCOUNT_SPEC);
+                String acctSpecsJson = intent.getStringExtra(EXTRA_ACCOUNTS_SPEC);
+                List<AccountSpecification> accountSpecs;
                 AccountSpecification accountSpec;
+
                 try {
-                    accountSpec = mapper.readValue(acctSpecJson, AccountSpecification.class);
+                    //accountSpec = mapper.readValue(acctSpecsJson, AccountSpecification.class)
+                    accountSpecs = mapper.readValue(acctSpecsJson, new TypeReference<List<AccountSpecification>>(){});
+                    accountSpec = accountSpecs.stream()
+                            .filter (s -> s.getIdentifier().startsWith(DEFAULT_ACCOUNT))
+                            .findFirst()
+                            .orElse(accountSpecs.get(0));
+                    accountIdx = accountSpecs.indexOf(accountSpec);
                 } catch (JsonProcessingException processingException) {
                     Log.log(Level.SEVERE, "Failed to deserialize account intent: %s", processingException);
                     throw new RuntimeException(processingException);
@@ -166,6 +180,7 @@ public class DemoApplication extends Application {
                 registerReceiver(connectivityReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
             }
         }
+        return accountIdx;
     }
 
     public static void setAccount(AccountSpecification accountSpec) {

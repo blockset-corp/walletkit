@@ -12,6 +12,7 @@ import Foundation // DispatchQueue
 
 #if os(Linux)
 import FoundationNetworking
+import WalletKitCore
 #endif
 
 private struct BlocksetCapabilities: OptionSet, CustomStringConvertible {
@@ -739,7 +740,7 @@ public class BlocksetSystemClient: SystemClient {
                         completion (res.flatMap {
                             Model.asSubscription(json: JSON(dict: $0))
                                 .map { Result.success ($0) }
-                                ?? Result.failure(SystemClientError.model("Missed Subscription"))
+                                ?? Result.failure(SystemClientError.badResponse("Missed Subscription"))
                         })
         }
     }
@@ -805,7 +806,7 @@ public class BlocksetSystemClient: SystemClient {
                      deserializer: { (data: Data?) in
                         return (nil == data || 0 == data!.count 
                             ? Result.success (())
-                            : Result.failure (SystemClientError.model ("Unexpected Data on DELETE"))) },
+                            : Result.failure (SystemClientError.badResponse ("Unexpected Data on DELETE"))) },
                      completion: completion)
     }
 
@@ -1190,7 +1191,7 @@ public class BlocksetSystemClient: SystemClient {
         // We don't actually use the `transactionID` through the `GET .../account_transactions`
         // endpoint.  It is more direct to just repeatedly "GET .../accounts"
         // let path = "/_experimental/hedera/account_transactions/\(blockchainId):\(transactionId)"
-        let noDataFailure = Result<[SystemClient.HederaAccount],SystemClientError>.failure(SystemClientError.noData)
+        let noDataFailure = Result<[SystemClient.HederaAccount],SystemClientError>.failure(SystemClientError.badResponse("No Data"))
 
         let initialDelayInSeconds  = 2
         let retryPeriodInSeconds   = 5
@@ -1248,7 +1249,7 @@ public class BlocksetSystemClient: SystemClient {
     public func createHederaAccount (blockchainId: String,
                                      publicKey: String,
                                      completion: @escaping (Result<[SystemClient.HederaAccount], SystemClientError>) -> Void) {
-        let noDataFailure = Result<[SystemClient.HederaAccount],SystemClientError>.failure(SystemClientError.noData)
+        let noDataFailure = Result<[SystemClient.HederaAccount],SystemClientError>.failure(SystemClientError.badResponse("No Data"))
 
         let publicKey = canonicalizePublicKey (publicKey)
 
@@ -1268,9 +1269,9 @@ public class BlocksetSystemClient: SystemClient {
                         (res: Result<JSON.Dict, SystemClientError>) in
                         switch res {
                         case .failure (let error):
-                            // If a reponse error with HTTP status of 422, the Hedera accont
+                            // If a submission error (with HTTP status of 422), the Hedera accont
                             // already exists.  Just get it.
-                            if case let .response (code, _, _) = error, code == 422 {
+                            if case .submission (_, _) = error {
                                 self.getHederaAccount (blockchainId: blockchainId,
                                                        publicKey: publicKey,
                                                        completion: completion)
@@ -1390,20 +1391,23 @@ public class BlocksetSystemClient: SystemClient {
 
     private static func deserializeAsJSON<T> (_ data: Data?) -> Result<T, SystemClientError> {
         guard let data = data else {
-            return Result.failure (SystemClientError.noData);
+            return Result.failure (SystemClientError.badResponse("No Data"));
         }
 
         do {
             guard let json = try JSONSerialization.jsonObject(with: data, options: []) as? T
                 else {
-                    print ("SYS: BDB:API: ERROR: JSON.Dict: '\(data.map { String(format: "%c", $0) }.joined())'")
-                    return Result.failure(SystemClientError.jsonParse(nil)) }
+                    let dataString = data.map { String(format: "%c", $0) }.joined()
+                    print ("SYS: BDB:API: ERROR: JSON.Dict: '\(dataString)'")
+                    return Result.failure(SystemClientError.badResponse("JSON Parse: '\(dataString)'")) }
 
             return Result.success (json)
         }
         catch let jsonError as NSError {
-            print ("SYS: BDB:API: ERROR: JSON.Error: '\(data.map { String(format: "%c", $0) }.joined())'")
-            return Result.failure (SystemClientError.jsonParse (jsonError))
+            let dataString = data.map { String(format: "%c", $0) }.joined()
+            let warnString = "JSON.Error: '\(jsonError.description)'; Data: '\(dataString)'"
+            print ("SYS: BDB:API: ERROR: \(warnString)")
+            return Result.failure (SystemClientError.badResponse(warnString))
         }
     }
 
@@ -1414,23 +1418,90 @@ public class BlocksetSystemClient: SystemClient {
                                  completion: @escaping (Result<T, SystemClientError>) -> Void) {
         dataTaskFunc (session, request) { (data, res, error) in
             guard nil == error else {
-                completion (Result.failure(SystemClientError.submission (error!))) // NSURLErrorDomain
+                var sce: SystemClientError = SystemClientError.badResponse ("General Error: \(String (reflecting: error))")
+                let error = error! as NSError
+
+                if error.domain == NSURLErrorDomain {
+                    switch error.code {
+                    case NSURLErrorCannotFindHost,
+                        NSURLErrorCannotConnectToHost,
+                        NSURLErrorRedirectToNonExistentLocation:
+                        sce = SystemClientError.unavailable
+
+                    case NSURLErrorTimedOut,
+                        NSURLErrorNetworkConnectionLost,
+                        NSURLErrorDNSLookupFailed,
+                        NSURLErrorNotConnectedToInternet:
+                        sce = SystemClientError.lostConnectivity
+
+                    default: break
+                    }
+                }
+
+                completion (Result.failure(sce))
                 return
             }
 
             guard let res = res as? HTTPURLResponse else {
-                completion (Result.failure (SystemClientError.url ("No Response")))
+                completion (Result.failure (SystemClientError.badResponse ("Expected HTTP URL Response")))
                 return
             }
 
             guard responseSuccess.contains(res.statusCode) else {
-                let json = data
-                    .flatMap { try? JSONSerialization.jsonObject(with: $0, options: []) as? [String:Any] }
+                // Try to parse the `data` as JSON
+                let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0, options: []) as? [String:Any] }
 
-                // It is an error if there IS data but IS NOT json (could not parse).
-                let jsonError = nil != data && nil == json
+                var respError: SystemClientError!
 
-                completion (Result.failure (SystemClientError.response(res.statusCode, json, jsonError)))
+                switch (res.statusCode) {
+                case 400, 404: respError = SystemClientError.badRequest ("Resource Not Found")
+                case 403:      respError = SystemClientError.permission
+                case 429:      respError = SystemClientError.resource
+                case 500, 504: respError = SystemClientError.badResponse ("Submission Status Error: \(res.statusCode)")
+                case 422:
+                    // We expect `json` with more information about the error
+                    let status = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "submit_status") }
+
+                    if nil == data {
+                        respError = SystemClientError.badResponse ("Submission Status Error: No 'data' Provided")
+                    }
+                    else if nil == status {
+                        let dataString = data!.map { String(format: "%c", $0) }.joined()
+                        respError = SystemClientError.badResponse ("Submission Status Error: No 'submit_status': \(dataString)")
+                    }
+                    else {
+                        let submitDetails = json.flatMap { JSON (dict: $0) }.flatMap { $0.asString (name: "network_message") }
+                        ?? "Submission Status Error: Missed 'network_message': \(data!.map { String(format: "%c", $0) }.joined())"
+
+                        var submitError: SystemClientSubmissionError!
+                        switch (status!) {
+                        case "success":                       submitError = .unknown // unexpected "success" on 422
+                        case "error_internal":                fallthrough
+                        case "error_unknown":                 submitError = .unknown
+                        case "error_transaction_invalid":     submitError = .transaction
+                        case "error_transaction_expired":     submitError = .transactionExpired
+                        case "error_transaction_duplicate":   submitError = .transactionDuplicate
+                        case "error_signature_invalid":       submitError = .signature
+
+                        case "error_nonce_invalid":           submitError = .nonceInvalid
+                        case "error_nonce_used":              submitError = .nonceTooLow
+                        case "error_nonce_gap":               submitError = .nonceInvalid
+
+                        case "error_fee_insufficient":        submitError = .insufficientFee
+                        case "error_fee_rate_insufficient":   submitError = .insufficientNetworkFee
+                        case "error_fee_budget_insufficient": submitError = .insufficientNetworkCostUnit
+
+                        case "error_balance_insufficient":    submitError = .insufficientBalance
+                        case "error_account_unknown":         submitError = .account
+                        default:                              submitError = .unknown
+                        }
+                        respError = SystemClientError.submission(error: submitError, details: submitDetails)
+                    }
+                default:
+                    respError = SystemClientError.badResponse("Submission Status Error: Unrecognized Status Code: \(res.statusCode)")
+                }
+
+                completion (Result.failure(respError))
                 return
             }
 
@@ -1519,7 +1590,7 @@ public class BlocksetSystemClient: SystemClient {
                                   deserializer: @escaping (_ data: Data?) -> Result<T, SystemClientError> = deserializeAsJSON,
                                   completion: @escaping (Result<T, SystemClientError>) -> Void) {
         guard var urlBuilder = URLComponents (string: baseURL)
-            else { completion (Result.failure(SystemClientError.url("URLComponents"))); return }
+            else { completion (Result.failure(SystemClientError.badRequest("Malformed `baseURL`: \(baseURL)"))); return }
 
         urlBuilder.path = path.starts(with: "/") ? path : "/\(path)"
         if let query = query {
@@ -1527,7 +1598,7 @@ public class BlocksetSystemClient: SystemClient {
         }
 
         guard let url = urlBuilder.url
-            else { completion (Result.failure (SystemClientError.url("URLComponents.url"))); return }
+            else { completion (Result.failure (SystemClientError.badRequest("Bad URL: \(String (reflecting: urlBuilder))"))); return }
 
         print ("SYS: BDB: Request: \(url.absoluteString): Method: \(httpMethod): Data: \(data?.description ?? "[]")")
 
@@ -1538,7 +1609,8 @@ public class BlocksetSystemClient: SystemClient {
         if let data = data {
             do { request.httpBody = try JSONSerialization.data (withJSONObject: data, options: []) }
             catch let jsonError as NSError {
-                completion (Result.failure (SystemClientError.jsonParse(jsonError)))
+                let warnString = "JSON.Error: '\(jsonError.description)'; Data: '\(data.description)'"
+                completion (Result.failure (SystemClientError.badRequest(warnString)))
             }
         }
 
@@ -1578,7 +1650,7 @@ public class BlocksetSystemClient: SystemClient {
                             : [json.dict])
 
                         guard let data = json as? [JSON.Dict]
-                            else { return Result.failure(SystemClientError.model ("[JSON.Dict] expected")) }
+                            else { return Result.failure(SystemClientError.badResponse ("[JSON.Dict] expected")) }
 
                         return Result.success (data.map { JSON (dict: $0) })
         })
@@ -1624,13 +1696,13 @@ public class BlocksetSystemClient: SystemClient {
     private static func getOneExpected<T> (id: String, data: [JSON], transform: (JSON) -> T?) -> Result<T, SystemClientError> {
         switch data.count {
         case  0:
-            return Result.failure (SystemClientError.noEntity(id: id))
+            return Result.failure (SystemClientError.badResponse("No Entity: \(id)"))
         case  1:
             guard let transfer = transform (data[0])
-                else { return Result.failure (SystemClientError.model ("(JSON) -> T transform error (one)"))}
+                else { return Result.failure (SystemClientError.badResponse ("(JSON) -> T transform error (one)"))}
             return Result.success (transfer)
         default:
-            return Result.failure (SystemClientError.model ("(JSON) -> T expected one only"))
+            return Result.failure (SystemClientError.badResponse ("(JSON) -> T expected one only"))
         }
     }
 
@@ -1647,7 +1719,7 @@ public class BlocksetSystemClient: SystemClient {
     private static func getManyExpected<T> (data: [JSON], transform: (JSON) -> T?) -> Result<[T], SystemClientError> {
         let results = data.map (transform)
         return results.contains(where: { $0 == nil })
-            ? Result.failure(SystemClientError.model ("(JSON) -> T transform error (many)"))
+            ? Result.failure(SystemClientError.badResponse ("(JSON) -> T transform error (many)"))
             : Result.success(results as! [T])
     }
 
@@ -1665,7 +1737,7 @@ public class BlocksetSystemClient: SystemClient {
         return { (res: Result<JSON,SystemClientError>) in
             completion (res.flatMap {
                 extract ($0)("result").map { Result.success ($0) } // extract()() returns an optional
-                    ?? Result<T,SystemClientError>.failure(SystemClientError.noData) })
+                    ?? Result<T,SystemClientError>.failure(SystemClientError.badResponse("No Data")) })
         }
     }
 

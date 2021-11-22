@@ -89,7 +89,7 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
                              this.testConfiguration.getBlocksetAccess().getBaseURL());
 
         setInitialAccount();
-        DemoApplication.initialize(this);
+        accountIdx = DemoApplication.initialize(this);
         if (configOk()) {
 
             setActivityTitle();
@@ -137,21 +137,18 @@ public class WalletListActivity extends AppCompatActivity implements DefaultSyst
 
         Intent intent = getIntent();
 
-       if (accounts != null && accounts.size() > 0) {
-
-            // We have a valid account
-            accountIdx = 0;
+        if (accounts != null && accounts.size() > 0) {
 
             ObjectMapper mapper = new ObjectMapper();
             mapper.registerModule(new GuavaModule());
             String acctSer;
             try {
-                acctSer = mapper.writeValueAsString(accounts.get(accountIdx));
+                acctSer = mapper.writeValueAsString(accounts);
             } catch (JsonProcessingException processingException) {
-                throw new RuntimeException (processingException);
+                throw new RuntimeException(processingException);
             }
 
-            intent.putExtra(DemoApplication.EXTRA_ACCOUNT_SPEC, acctSer);
+            intent.putExtra(DemoApplication.EXTRA_ACCOUNTS_SPEC, acctSer);
         }
     }
 

@@ -10,12 +10,16 @@ package com.blockset.walletkit.brd.systemclient;
 import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.brd.systemclient.ObjectCoder.ObjectCoderException;
-import com.blockset.walletkit.errors.QueryError;
-import com.blockset.walletkit.errors.QueryNoDataError;
+import com.blockset.walletkit.errors.SystemClientError;
+import com.blockset.walletkit.errors.SystemClientSubmitError;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.collect.Multimap;
 
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.InetAddress;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -57,7 +61,7 @@ public class BdbApiClient {
     void sendPost(String resource,
                   Multimap<String, String> params,
                   Object body,
-                  CompletionHandler<Void, QueryError> handler) {
+                  CompletionHandler<Void, SystemClientError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
                 params,
@@ -71,7 +75,7 @@ public class BdbApiClient {
                       Multimap<String, String> params,
                       Object body,
                       Class<? extends T> clazz,
-                      CompletionHandler<T, QueryError> handler) {
+                      CompletionHandler<T, SystemClientError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
                 params,
@@ -85,7 +89,7 @@ public class BdbApiClient {
                       Multimap<String, String> params,
                       Object body,
                       Class<? extends T> clazz,
-                      CompletionHandler<T, QueryError> handler) {
+                      CompletionHandler<T, SystemClientError> handler) {
         makeAndSendRequest(
                 resourcePath,
                 params,
@@ -101,7 +105,7 @@ public class BdbApiClient {
     <T> void sendGet(String resource,
                      Multimap<String, String> params,
                      Class<? extends T> clazz,
-                     CompletionHandler<T, QueryError> handler) {
+                     CompletionHandler<T, SystemClientError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
                 params,
@@ -115,7 +119,7 @@ public class BdbApiClient {
     <T> void sendGetForArray(String resource,
                              Multimap<String, String> params,
                              Class<? extends T> clazz,
-                             CompletionHandler<List<T>, QueryError> handler) {
+                             CompletionHandler<List<T>, SystemClientError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
                 params,
@@ -130,7 +134,7 @@ public class BdbApiClient {
                              String embeddedPath,
                              Multimap<String, String> params,
                              Class<? extends T> clazz,
-                             CompletionHandler<List<T>, QueryError> handler) {
+                             CompletionHandler<List<T>, SystemClientError> handler) {
         makeAndSendRequest(
                 resourcePath,
                 params,
@@ -144,7 +148,7 @@ public class BdbApiClient {
     <T> void sendGetForArrayWithPaging(String resource,
                                        Multimap<String, String> params,
                                        Class<? extends T> clazz,
-                                       CompletionHandler<PagedData<T>, QueryError> handler) {
+                                       CompletionHandler<PagedData<T>, SystemClientError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
                 params,
@@ -158,7 +162,7 @@ public class BdbApiClient {
     <T> void sendGetForArrayWithPaging(String resource,
                                        String url,
                                        Class<? extends T> clazz,
-                                       CompletionHandler<PagedData<T>, QueryError> handler) {
+                                       CompletionHandler<PagedData<T>, SystemClientError> handler) {
         makeAndSendRequest(
                 url,
                 "GET",
@@ -171,7 +175,7 @@ public class BdbApiClient {
                            String id,
                            Multimap<String, String> params,
                            Class<? extends T> clazz,
-                           CompletionHandler<T, QueryError> handler) {
+                           CompletionHandler<T, SystemClientError> handler) {
         makeAndSendRequest(
                 Arrays.asList(resource, id),
                 params,
@@ -186,7 +190,7 @@ public class BdbApiClient {
                            String id,
                            Multimap<String, String> params,
                            Class<? extends T> clazz,
-                           CompletionHandler<T, QueryError> handler) {
+                           CompletionHandler<T, SystemClientError> handler) {
         List<String> fullResourcePath = new ArrayList<>(resourcePath);
         fullResourcePath.add(id);
 
@@ -205,7 +209,7 @@ public class BdbApiClient {
                      Multimap<String, String> params,
                      Object body,
                      Class<? extends T> clazz,
-                     CompletionHandler<T, QueryError> handler) {
+                     CompletionHandler<T, SystemClientError> handler) {
         makeAndSendRequest(
                 Collections.singletonList(resource),
                 params,
@@ -220,7 +224,7 @@ public class BdbApiClient {
                            Multimap<String, String> params,
                            Object json,
                            Class<? extends T> clazz,
-                           CompletionHandler<T, QueryError> handler) {
+                           CompletionHandler<T, SystemClientError> handler) {
         makeAndSendRequest(
                 Arrays.asList(resource, id),
                 params,
@@ -236,7 +240,7 @@ public class BdbApiClient {
     void sendDeleteWithId(String resource,
                           String id,
                           Multimap<String, String> params,
-                          CompletionHandler<Void, QueryError> handler) {
+                          CompletionHandler<Void, SystemClientError> handler) {
         makeAndSendRequest(
                 Arrays.asList(resource, id),
                 params,
@@ -249,10 +253,10 @@ public class BdbApiClient {
     private <T> void makeAndSendRequest(String fullUrl,
                                         String httpMethod,
                                         ResponseParser<? extends T> parser,
-                                        CompletionHandler<T, QueryError> handler) {
+                                        CompletionHandler<T, SystemClientError> handler) {
         HttpUrl url = HttpUrl.parse(fullUrl);
         if (null == url) {
-            handler.handleError(new QueryUrlError("Invalid base URL " + fullUrl));
+            handler.handleError(new SystemClientError.BadRequest("Invalid base URL " + fullUrl));
             return;
         }
 
@@ -273,7 +277,7 @@ public class BdbApiClient {
                                         @Nullable Object json,
                                         String httpMethod,
                                         ResponseParser<? extends T> parser,
-                                        CompletionHandler<T, QueryError> handler) {
+                                        CompletionHandler<T, SystemClientError> handler) {
         RequestBody httpBody;
         if (json == null) {
             httpBody = null;
@@ -282,13 +286,13 @@ public class BdbApiClient {
             httpBody = RequestBody.create(coder.serializeObject(json), MEDIA_TYPE_JSON);
 
         } catch (ObjectCoderException e) {
-            handler.handleError(new QuerySubmissionError(e.getMessage()));
+            handler.handleError(new SystemClientError.BadRequest(e.getMessage()));
             return;
         }
 
         HttpUrl url = HttpUrl.parse(baseUrl);
         if (null == url) {
-            handler.handleError(new QueryUrlError("Invalid base URL " + baseUrl));
+            handler.handleError(new SystemClientError.BadRequest("Invalid base URL " + baseUrl));
             return;
         }
 
@@ -314,51 +318,147 @@ public class BdbApiClient {
         sendRequest(requestBuilder.build(), dataTask, parser, handler);
     }
 
+    private boolean lostConnectivity() {
+        try {
+            return !InetAddress.getByName("1.1.1.1").isReachable(1000); // Cloudflare DNS
+        } catch (UnknownHostException e) {
+            return true;
+        } catch (Exception e) {
+            return false; // unsure
+        }
+    }
+
     private <T> void sendRequest(Request request,
                                  DataTask dataTask,
                                  ResponseParser<? extends T> parser,
-                                 CompletionHandler<T, QueryError> handler) {
+                                 CompletionHandler<T, SystemClientError> handler) {
         dataTask.execute(client, request, new Callback() {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 T data = null;
-                QueryError error = null;
-                RuntimeException exception = null;
+                SystemClientError error = null;
 
                 try (ResponseBody responseBody = response.body()) {
                     int responseCode = response.code();
                     if (HttpStatusCodes.responseSuccess(request.method()).contains(responseCode)) {
                         if (responseBody == null) {
-                            throw new QueryNoDataError();
+                            error = new SystemClientError.BadResponse("No Data");
                         } else {
                             data = parser.parseResponse(responseBody.string());
                         }
                     } else {
-                        Map<String, Object> json = null;
-                        boolean jsonError = false;
+                        switch (responseCode) {
+                            case 400:
+                            case 404:
+                                error = new SystemClientError.BadRequest("Resource Not Found: Request: " + request.toString());
+                                break;
+                            case 403:
+                                error = new SystemClientError.Permission();
+                                break;
+                            case 429:
+                                error = new SystemClientError.Resource();
+                                break;
+                            case 500:
+                            case 504:
+                                error = new SystemClientError.BadResponse ("Submission Status Error: " + responseCode);
+                                break;
+                            case 422: {
+                                Map<String, Object> json = null;
+                                boolean jsonError = false;
 
-                        // Parse any responseData as JSON
-                        if (responseBody != null) {
-                            try {
-                                json = coder.deserializeJson(Map.class, responseBody.string());
-                            } catch (ObjectCoderException e) {
-                                jsonError = true;
+                                // Parse any responseData as JSON
+                                if (responseBody == null)
+                                    error = new SystemClientError.BadResponse("Submission Status Error: No 'data' Provided");
+                                else {
+                                    try {
+                                        json = coder.deserializeJson(Map.class, responseBody.string());
+                                    } catch (ObjectCoderException e) {
+                                        error = new SystemClientError.BadResponse("Submission Status Error: Can't Parse 'data': " + responseBody.string());
+                                    }
+                                }
+
+                                String status = "success";
+
+                                if (null == error) {
+                                    Object statusObject = json.get("submit_status");
+                                    if (statusObject instanceof String)
+                                        status = (String) statusObject;
+                                    else
+                                        error = new SystemClientError.BadResponse("Submission Status Error: No 'submit_status': " + responseBody.string());
+                                }
+
+                                if (null == error) {
+                                    SystemClientSubmitError submitError;
+                                    String details = json.get("network_message").toString();
+                                    switch (status) {
+                                        case "success":
+                                            submitError = new SystemClientSubmitError.Unknown(details); // unexpected "success" on 422
+                                            break;
+                                        case "error_internal":
+                                        case "error_unknown":
+                                            submitError = new SystemClientSubmitError.Unknown(details);
+                                            break;
+                                        case "error_transaction_invalid":
+                                            submitError = new SystemClientSubmitError.Transaction(details);
+                                            break;
+                                        case "error_transaction_expired":
+                                            submitError = new SystemClientSubmitError.TransactionExpired(details);
+                                            break;
+                                        case "error_transaction_duplicate":
+                                            submitError = new SystemClientSubmitError.TransactionDuplicate(details);
+                                            break;
+                                        case "error_signature_invalid":
+                                            submitError = new SystemClientSubmitError.Signature(details);
+                                            break;
+
+                                        case "error_nonce_used":
+                                            submitError = new SystemClientSubmitError.NonceTooLow(details);
+                                            break;
+                                        case "error_nonce_invalid":
+                                        case "error_nonce_gap":
+                                           submitError = new SystemClientSubmitError.NonceInvalid(details);
+                                            break;
+
+                                        case "error_fee_insufficient":
+                                            submitError = new SystemClientSubmitError.InsufficientFee(details);
+                                            break;
+                                        case "error_fee_rate_insufficient":
+                                            submitError = new SystemClientSubmitError.InsufficientNetworkFee(details);
+                                            break;
+                                        case "error_fee_budget_insufficient":
+                                            submitError = new SystemClientSubmitError.InsufficientNetworkCostUnit(details);
+                                            break;
+
+                                        case "error_balance_insufficient":
+                                            submitError = new SystemClientSubmitError.InsufficientBalance(details);
+                                            break;
+                                        case "error_account_unknown":
+                                            submitError = new SystemClientSubmitError.Account(details);
+                                            break;
+
+                                         default:
+                                            submitError = new SystemClientSubmitError.Unknown(details);
+                                            break;
+                                    }
+
+                                    error = new SystemClientError.Submission(submitError);
+                                }
+                                break;
                             }
+                            default:
+                                error = new SystemClientError.BadResponse("Submission Status Error: Unrecognized Status Code: " + responseCode);
+                                break;
                         }
-                        throw new QueryResponseError(responseCode, json, jsonError);
                     }
-                } catch (QueryError e) {
+                } catch (SystemClientError e) {
                     error = e;
                 } catch (RuntimeException e) {
-                    exception = e;
+                    error = new SystemClientError.BadResponse(e.getMessage());
                 }
 
                 // if anything goes wrong, make sure we report as an error
-                if (exception != null) {
-                    Log.log(Level.SEVERE, "response failed with runtime exception", exception);
-                    handler.handleError(new QuerySubmissionError(exception.getMessage()));
-                } else if (error != null) {
-                    Log.log(Level.SEVERE, "response failed with error", error);
+                if (error != null) {
+                    Log.log(Level.SEVERE, String.format ("response failed with error: '%s'", error));
                     handler.handleError(error);
                 } else {
                     handler.handleData(data);
@@ -366,16 +466,45 @@ public class BdbApiClient {
             }
 
             @Override
-            public void onFailure(Call call, IOException e) {
-                Log.log(Level.SEVERE, "send request failed", e);
-                handler.handleError(new QuerySubmissionError(e.getMessage()));
+            public void onFailure(Call call, IOException exception) {
+                Log.log(Level.SEVERE, String.format("send request failed: '%s'", exception.getLocalizedMessage()));
+                SystemClientError error = null;
+                try {
+                    throw exception;
+                } catch (UnknownHostException | ConnectException e) {
+                    // Apparently 'Airplane Plane Mode' and 'www.xblocksetx.com' both produce `UnknownHostException`
+                    error = lostConnectivity()
+                            ? new SystemClientError.LostConnectivity()
+                            : new SystemClientError.Unavailable();
+                } catch (SocketTimeoutException e) {
+                    error = new SystemClientError.LostConnectivity();
+                } catch (IOException e) {
+
+                    // IOExceptions in java.net
+                    //
+                    // BindException               - Signals that an error occurred while attempting to bind a socket to a local address and port.
+                    //*ConnectException            - Signals that an error occurred while attempting to connect a socket to a remote address and port.
+                    // HttpRetryException          - Thrown to indicate that a HTTP request needs to be retried but cannot be retried automatically, due to streaming mode being enabled.
+                    // MalformedURLException       - Thrown to indicate that a malformed URL has occurred.
+                    // NoRouteToHostException	    - Signals that an error occurred while attempting to connect a socket to a remote address and port.
+                    // PortUnreachableException    - Signals that an ICMP Port Unreachable message has been received on a connected datagram.
+                    // ProtocolException           - Thrown to indicate that there is an error in the underlying protocol, such as a TCP error.
+                    // SocketException             - Thrown to indicate that there is an error creating or accessing a Socket.
+                    //*SocketTimeoutException      - Signals that a timeout has occurred on a socket read or accept.
+                    //*UnknownHostException        - Thrown to indicate that the IP address of a host could not be determined.
+                    // UnknownServiceException     - Thrown to indicate that an unknown service exception has occurred.
+                    // URISyntaxException          - Checked exception thrown to indicate that a string could not be parsed as a URI reference.
+
+                    error = new SystemClientError.BadResponse("General Error: " + e.getLocalizedMessage());
+                }
+                handler.handleError(error);
             }
         });
     }
 
     private interface ResponseParser<T> {
         @Nullable
-        T parseResponse(String responseData) throws QueryError;
+        T parseResponse(String responseData) throws SystemClientError;
     }
 
     private static class EmptyResponseParser implements ResponseParser<Void> {
@@ -398,16 +527,16 @@ public class BdbApiClient {
         }
 
         @Override
-        public T parseResponse(String responseData) throws QueryError {
+        public T parseResponse(String responseData) throws SystemClientError {
             try {
                 T resp = coder.deserializeJson(clazz, responseData);
                 if (resp == null) {
-                    throw new QueryModelError("Transform error");
+                    throw new SystemClientError.BadResponse("Transform error");
                 }
 
                 return resp;
             } catch (ObjectCoderException e) {
-                throw new QueryJsonParseError(e.getMessage());
+                throw new SystemClientError.BadResponse("Transform Parse Error: " + e.getMessage());
             }
         }
     }
@@ -427,19 +556,19 @@ public class BdbApiClient {
         }
 
         @Override
-        public List<T> parseResponse(String responseData) throws QueryError {
+        public List<T> parseResponse(String responseData) throws SystemClientError {
             try {
                 BdbEmbeddedResponse resp = coder.deserializeJson(BdbEmbeddedResponse.class, responseData);
                 List<T> data = (resp == null || !resp.containsEmbedded(path)) ?
                         Collections.emptyList() :
                         coder.deserializeObjectList(clazz, resp.getEmbedded(path).get());
                 if (data == null) {
-                    throw new QueryModelError("Transform error");
+                    throw new SystemClientError.BadResponse("Transform EmbeddedArray error");
                 }
 
                 return data;
             } catch (ObjectCoderException e) {
-                throw new QueryJsonParseError(e.getMessage());
+                throw new SystemClientError.BadResponse("Transform EmbeddedArray Parse Error: " + e.getMessage());
             }
         }
     }
@@ -459,21 +588,21 @@ public class BdbApiClient {
         }
 
         @Override
-        public PagedData<T> parseResponse(String responseData) throws QueryError {
+        public PagedData<T> parseResponse(String responseData) throws SystemClientError {
             try {
                 BdbEmbeddedResponse resp = coder.deserializeJson(BdbEmbeddedResponse.class, responseData);
                 List<T> data = (resp == null || !resp.containsEmbedded(path)) ?
                         Collections.emptyList() :
                         coder.deserializeObjectList(clazz, resp.getEmbedded(path).get());
                 if (data == null) {
-                    throw new QueryModelError("Transform error");
+                    throw new SystemClientError.BadResponse("Transform PagedArray error");
                 }
 
                 String prevUrl = resp == null ? null : resp.getPreviousUrl().orNull();
                 String nextUrl = resp == null ? null : resp.getNextUrl().orNull();
                 return new PagedData<>(data, prevUrl, nextUrl);
             } catch (ObjectCoderException e) {
-                throw new QueryJsonParseError(e.getMessage());
+                throw new SystemClientError.BadResponse("Transform PagedArray Parse Error: " + e.getMessage());
             }
         }
     }

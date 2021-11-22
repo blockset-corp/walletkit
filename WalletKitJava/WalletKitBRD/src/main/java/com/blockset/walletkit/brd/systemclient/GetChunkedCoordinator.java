@@ -7,7 +7,7 @@
  */
 package com.blockset.walletkit.brd.systemclient;
 
-import com.blockset.walletkit.errors.QueryError;
+import com.blockset.walletkit.errors.SystemClientError;
 import com.blockset.walletkit.utility.CompletionHandler;
 
 import java.util.ArrayList;
@@ -20,13 +20,13 @@ class GetChunkedCoordinator<ChunkType, ResultType> {
 
     private final List<List<ChunkType>> chunks;
     private final List<ResultType> transactions;
-    private final CompletionHandler<List<ResultType>, QueryError> handler;
+    private final CompletionHandler<List<ResultType>, SystemClientError> handler;
 
-    private QueryError error;
+    private SystemClientError error;
 
     /* package */
     GetChunkedCoordinator(List<List<ChunkType>> chunks,
-                          CompletionHandler<List<ResultType>, QueryError> handler) {
+                          CompletionHandler<List<ResultType>, SystemClientError> handler) {
 
         this.chunks = new ArrayList<>(chunks);
         this.transactions = new ArrayList<>();
@@ -53,7 +53,7 @@ class GetChunkedCoordinator<ChunkType, ResultType> {
     }
 
     /* package */
-    void handleError(QueryError error) {
+    void handleError(SystemClientError error) {
         boolean transitionToError = false;
 
         synchronized (this) {
