@@ -1,3 +1,5 @@
+SHELL := /bin/bash
+
 #
 # Define OS_BRD and CPU_BRD
 #

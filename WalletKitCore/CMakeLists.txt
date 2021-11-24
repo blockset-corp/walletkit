@@ -21,7 +21,12 @@ endif()
 # Change the default RELEASE and DEBUG flags.
 # Even for RELEASE build, always use DEBUG and never NDEBUG (to enable assert())
 set(CMAKE_C_FLAGS_DEBUG   "-DDEBUG")
-set(CMAKE_C_FLAGS_RELEASE "-Oz")
+
+if (LINUX)
+    set(CMAKE_C_FLAGS_RELEASE "-Os")
+else()
+    set(CMAKE_C_FLAGS_RELEASE "-Oz")
+endif()
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
 
