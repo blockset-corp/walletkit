@@ -1711,13 +1711,6 @@ void btcPeerManagerConnect(BRBitcoinPeerManager *manager)
                                    _peerSetFeePerKb, _peerRequestedTx, _peerNetworkIsReachable, _peerThreadCleanup);
                 btcPeerSetEarliestKeyTime(info->peer, manager->earliestKeyTime);
                 btcPeerConnect(info->peer);
-
-                if (btcPeerConnectStatus(info->peer) == BRPeerStatusDisconnected) {
-                    pthread_mutex_unlock(&manager->lock);
-                    _peerDisconnected(info, ENOTCONN);
-                    pthread_mutex_lock(&manager->lock);
-                    manager->peerThreadCount--;
-                }
             }
         }
 
