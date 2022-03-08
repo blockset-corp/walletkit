@@ -55,7 +55,7 @@ public class WKTransferIncludeStatus extends Structure {
         public abstract int toCore();
     }
 
-    private static int WK_TRANSFER_STATUS_DETAILS_LENGTH = (63+1);
+    private static final int WK_TRANSFER_STATUS_DETAILS_LENGTH = (127+1);
 
     public int type;
     public byte[] details = new byte[WK_TRANSFER_STATUS_DETAILS_LENGTH];
