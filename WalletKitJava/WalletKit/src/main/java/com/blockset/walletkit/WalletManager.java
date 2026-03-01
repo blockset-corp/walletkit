@@ -12,6 +12,7 @@ package com.blockset.walletkit;
 import androidx.annotation.Nullable;
 
 import com.blockset.walletkit.errors.ExportablePaperWalletError;
+import com.blockset.walletkit.errors.WalletConnectorError;
 import com.blockset.walletkit.errors.WalletSweeperError;
 import com.blockset.walletkit.utility.CompletionHandler;
 import com.google.common.base.Optional;
@@ -23,6 +24,8 @@ public interface WalletManager {
     void createSweeper(Wallet wallet, Key key, CompletionHandler<WalletSweeper, WalletSweeperError> completion);
 
     void createExportablePaperWallet(CompletionHandler<ExportablePaperWallet, ExportablePaperWalletError> completion);
+
+    void createWalletConnector(CompletionHandler<WalletConnector, WalletConnectorError> completion);
 
     void connect(@Nullable NetworkPeer peer);
 

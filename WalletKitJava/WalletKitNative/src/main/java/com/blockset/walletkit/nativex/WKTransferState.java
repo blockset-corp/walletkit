@@ -36,21 +36,18 @@ public class WKTransferState extends PointerType {
         public final UnsignedLong blockTimestamp;
         public final UnsignedLong transactionIndex;
         public final WKFeeBasis feeBasis;
-        public final boolean success;
-        public Optional<String> error;
+        public final WKTransferIncludeStatus status;
 
         public Included(UnsignedLong blockNumber,
                         UnsignedLong blockTimestamp,
                         UnsignedLong transactionIndex,
                         WKFeeBasis feeBasis,
-                        boolean success,
-                        Optional<String> error) {
+                        WKTransferIncludeStatus status) {
             this.blockNumber = blockNumber;
             this.blockTimestamp = blockTimestamp;
             this.transactionIndex = transactionIndex;
             this.feeBasis = feeBasis;
-            this.success = success;
-            this.error = error;
+            this.status = status;
         }
     }
 
@@ -60,8 +57,7 @@ public class WKTransferState extends PointerType {
         LongByReference transactionIndex = new LongByReference();
 
         PointerByReference feeBasis = new PointerByReference();
-        IntByReference     success  = new IntByReference();
-        PointerByReference error    = new PointerByReference();
+        WKTransferIncludeStatus.ByReference status = new WKTransferIncludeStatus.ByReference();
 
         if (WKBoolean.WK_FALSE ==
                 WKNativeLibraryDirect.wkTransferStateExtractIncluded(
@@ -70,8 +66,7 @@ public class WKTransferState extends PointerType {
                         blockTimestamp,
                         transactionIndex,
                         feeBasis,
-                        success,
-                        error))
+                        status))
             throw new IllegalStateException();
 
         try {
@@ -80,16 +75,15 @@ public class WKTransferState extends PointerType {
                     UnsignedLong.fromLongBits(blockTimestamp.getValue()),
                     UnsignedLong.fromLongBits(transactionIndex.getValue()),
                     new WKFeeBasis(feeBasis.getValue()),
-                    WKBoolean.WK_TRUE == success.getValue(),
-                    Optional.fromNullable(error.getValue()).transform(p -> p.getString(0)));
+                    status);
         }
         finally {
-            WKNativeLibraryDirect.wkMemoryFreeExtern(error.getValue());
+ //           WKNativeLibraryDirect.wkMemoryFreeExtern(error.getValue());
         }
     }
 
     public WKTransferSubmitError errored() {
-        WKTransferSubmitError.ByValue error = new WKTransferSubmitError.ByValue();
+        WKTransferSubmitError.ByReference error = new WKTransferSubmitError.ByReference();
 
         if (WKBoolean.WK_FALSE ==
                 WKNativeLibraryDirect.wkTransferStateExtractError(

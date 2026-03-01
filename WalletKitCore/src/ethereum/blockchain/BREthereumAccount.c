@@ -301,7 +301,7 @@ ethAccountSignBytesWithPrivateKey(BREthereumAccount account,
                                   uint8_t *bytes,
                                   size_t bytesCount,
                                   BRKey privateKey) {
-    return ethSignatureCreate(type, bytes, bytesCount, privateKey);
+    return ethSignatureCreate(type, bytes, bytesCount, privateKey, NULL);
 }
 
 extern BREthereumSignature

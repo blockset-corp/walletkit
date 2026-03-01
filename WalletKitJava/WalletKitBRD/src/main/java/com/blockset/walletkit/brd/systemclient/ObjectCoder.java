@@ -26,8 +26,8 @@ public final class ObjectCoder {
         }
     }
 
-    /* package */
-    static ObjectCoder createObjectCoderWithFailOnUnknownProperties() {
+
+    public static ObjectCoder createObjectCoderWithFailOnUnknownProperties() {
         ObjectMapper mapper = new ObjectMapper()
                 .registerModule(new GuavaModule())
                 .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

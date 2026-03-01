@@ -27,6 +27,7 @@ import com.blockset.walletkit.System;
 import com.blockset.walletkit.Transfer;
 import com.blockset.walletkit.TransferAttribute;
 import com.blockset.walletkit.TransferConfirmation;
+import com.blockset.walletkit.TransferIncludeStatus;
 import com.blockset.walletkit.TransferState;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
@@ -264,10 +265,12 @@ public class TransferDetailsActivity extends AppCompatActivity implements Defaul
             this.confirmationCountVisible = conf.isPresent();
             this.stateText = conf.transform((c) ->
                     state.toString() +
-                            (c.getSuccess()
+                            (c.getStatus().type == TransferIncludeStatus.Type.SUCCESS
                                     ? ""
-                                    : String.format (" (%s)", c.getError().or("err"))))
-                    .or(state.toString());
+                                    : String.format(" %s: (%s)",
+                                    c.getStatus().type, c.getStatus().details)))
+                   .or(state.toString());
+
             this.directionText = transfer.getDirection().toString();
 
             StringBuffer sb = new StringBuffer();

@@ -51,7 +51,7 @@ wkSignerSignLength (WKSigner signer,
 /**
  * Fill `dst` with the signature as the result of applying `signer` to `digest` where
  * `digestLen` must be 32 (bytes).  Returns WK_TRUE if successful.  Typically the
- * application would be unsuccessfull if the `dstLen` is not at least as large as the
+ * application would be unsuccessful if the `dstLen` is not at least as large as the
  * `wkSignerLength()` result.
  */
 extern WKBoolean

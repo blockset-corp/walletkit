@@ -298,6 +298,8 @@ transferTestsAddress (void) {
         wkTransferGive(transfer);
     }
     btcWalletFree(wid);
+    wkUnitGive(sat);
+    wkCurrencyGive(btc);
 }
 
 static void

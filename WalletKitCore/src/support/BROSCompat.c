@@ -111,9 +111,66 @@ mergesort_brd (void *__base, size_t __nel, size_t __width,
 #if defined (__ANDROID__)
     qsort (__base, __nel, __width, __compar);
     return 0;
-#elif defined (__APPLE__) || defined (__linux__) // IOS, MacOS
+#elif defined (__APPLE__) && !defined (__linux__) // IOS, MacOS
     return mergesort (__base, __nel, __width, __compar);
+#elif defined (__linux__)
+    qsort (__base, __nel, __width, __compar);
+    return 0;
 #else
 #  error Undefined mergesort_brd()
+#endif
+}
+
+extern char*
+strsep_brd(char **restrict stringp, const char *restrict delim) {
+#if defined (__ANDROID__)
+    return strsep(stringp, delim);
+#elif defined (__APPLE__) && !defined (__linux__) // IOS, MacOS
+    return strsep(stringp, delim);
+#elif defined (__linux__)
+    char        *s = *stringp;
+    char        *m = s;
+    const char  *d = NULL;
+
+    if (*stringp == NULL || delim == NULL)
+        return NULL;
+
+    while (*s != '\0') {
+        d = delim;
+        while (*d != '\0') {
+
+            if (*d == *s) {
+                *s = '\0';
+                *stringp = s + 1;
+                return m;
+            }
+            d++;
+        }
+        s++;
+    }
+
+    // Delimiter not found
+    *stringp = NULL;
+    return m;
+
+#else
+#  error Undefined mergesort_brd()
+#endif
+
+}
+
+extern FILE *
+open_memstream_brd (char **bufp, size_t *sizep) {
+#if defined (__APPLE__)
+    if (__builtin_available(iOS 11.0, macOS 10.13, *)) {
+            return open_memstream(bufp, sizep);
+    } else {
+        // Fallback on earlier versions
+        return NULL;
+    }
+#elif defined(__linux)
+    return open_memstream(bufp, sizep);
+#elif defined(__ANDROID__)
+    return open_memstream(bufp, sizep);
 #endif
 }

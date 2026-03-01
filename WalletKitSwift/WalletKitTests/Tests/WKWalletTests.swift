@@ -354,7 +354,7 @@ class WKWalletTests: WKSystemBaseTests {
         XCTAssertEqual (wallet.unit,       network.defaultUnitFor(currency: network.currency))
         XCTAssertEqual (wallet.unitForFee, network.defaultUnitFor(currency: network.currency))
         XCTAssertEqual (wallet.balance,        Amount.create(integer:  0, unit: wallet.unit))
-        XCTAssertEqual (wallet.balanceMinimum, Amount.create(integer: 20, unit: wallet.unit));
+        XCTAssertEqual (wallet.balanceMinimum, Amount.create(integer: 10, unit: wallet.unit));
         XCTAssertNil   (wallet.balanceMaximum)
         XCTAssertEqual (wallet.state, WalletState.created)
         XCTAssertEqual (wallet.target, wallet.targetForScheme(manager.addressScheme))

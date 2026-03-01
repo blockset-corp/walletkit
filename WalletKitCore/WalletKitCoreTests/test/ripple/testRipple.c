@@ -45,6 +45,15 @@ void hex2bin(const char* src, uint8_t * target)
     }
 }
 
+static void printByteString(const char* message, uint8_t * bytes, size_t byteSize)
+{
+    if (message) printf("%s\n", message);
+    for(int i = 0; i < byteSize; i++) {
+        printf("%02X", bytes[i]);
+    }
+    printf("\n");
+}
+
 static void checkRippleAddress(BRRippleAccount account, uint8_t * expected_bytes, const char * expectedRippleAddress)
 {
     BRRippleAddress address = rippleAccountGetAddress(account);
@@ -972,6 +981,52 @@ static void createSubmittableTransaction(void) {
     rippleAddressFree(targetAddress);
 }
 
+
+static void deleteAccountTest(const char * paperKey, const char * targetAddress,
+                              BRRippleSequence sequence, const char * expectedOutput) {
+
+    if (paperKey == NULL || strlen(paperKey) == 0) return;
+
+    BRRippleAccount sourceAccount = rippleAccountCreate(paperKey);
+    BRRippleAddress toAddress = rippleAddressCreateFromString(targetAddress, true);
+    BRRippleFeeBasis feeBasis = rippleAccountGetAccountDeleteFeeBasis(sourceAccount);
+
+    // NOTE: the fee is (currently) fixed at 5000000 drops and any left over in this account will
+    // be sent to the toAddress SO no amount is used in this transaction
+    BRRippleTransaction deleteTx = rippleAccountCreateCloseTransaction(sourceAccount, toAddress, feeBasis);
+
+    // Now sign/serialize
+    rippleAccountSetSequence(sourceAccount, sequence);
+    UInt512 seed = UINT512_ZERO;
+    BRBIP39DeriveKey(seed.u8, paperKey, NULL);
+    rippleAccountSignTransaction(sourceAccount, deleteTx, seed);
+
+    // Get the serialization and print
+    size_t bufferSize = 0;
+    uint8_t * bytes = rippleTransactionSerialize(deleteTx, &bufferSize);
+    printByteString("Delete Account Tx", bytes, bufferSize);
+
+    if (expectedOutput != NULL) {
+        // Convert the expected output to binary and compare
+        uint8_t * expectedBytes = calloc(1, strlen(expectedOutput) * 2);
+        hex2bin(expectedOutput, expectedBytes);
+        assert(memcmp(bytes, expectedBytes, bufferSize) == 0);
+        free(expectedBytes);
+    }
+
+    free(bytes);
+    rippleTransactionFree(deleteTx);
+    rippleAddressFree(toAddress);
+    rippleAccountFree(sourceAccount);
+}
+
+static void deleteAccountTests() {
+    deleteAccountTest("patient doctor olympic frog force glimpse endless antenna online dragon bargain someone", // Paper key of account that will be deleted
+                      "rnphQKowzYBpKShJ5uKbjRzpZW4CeWT8CJ", // Ripple address where any left over XRP will be sent
+                      45, // last used sequence number
+                      "1200152280000000240000002E2E000000006840000000004C4B407321032BE3CEE576036F9076596FC4F8D4A2A057F8F86548C0980E021316072FEDA2D374473045022100CF9E0E85FE1C2091DEFA51212085A5FF3561BE672BED4C879312BA0AC5F0AAC902205EC18DF1DC07F1D092589AAB18989511CE926B27BFFF09C68AD3EDCBC8720EBE8114EFFC2752B5C9DA2288C5D01F304EC82951E37CA283142C13C251BB783BEF5BEFF2855523AA18009BF708" // expected output
+                      );
+}
 static void submitWithDestinationTag() {
     // Create an account so we can get a public key
     const char * source_paper_key = "use a valid account here";
@@ -1121,6 +1176,8 @@ static void testStartingSequence()
 extern void
 runRippleTest (void /* ... */) {
 
+    deleteAccountTests();
+
 #if 0 // No BRRippleWallet; No BRRippleTransfer
     testStartingSequence();
 #endif
@@ -1143,6 +1200,7 @@ runRippleTest (void /* ... */) {
     const char * paper_key = "patient doctor olympic frog force glimpse endless antenna online dragon bargain someone";
     const char* ripple_address = "r41vZ8exoVyUfVzs56yeN8xB5gDhSkho9a";
     getAccountInfo(paper_key, ripple_address);
+
     //createSubmittableTransaction();
     //submitWithDestinationTag();
     //submitWithoutDestinationTag();

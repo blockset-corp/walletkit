@@ -275,22 +275,29 @@ public class WKNativeLibraryIT {
         }
     }
 
-    // Ethereum
+    // Support
 
     @Test
-    public void testEthereumRlp () {
+    public void testSupportEvent () {
+        TestWKNativeLibrary.INSTANCE.runEventTests ();
+    }
+
+    @Test
+    public void testSupportJson () {
+        TestWKNativeLibrary.INSTANCE.runJsonTests();
+    }
+
+    @Test
+    public void testSupportRlp () {
         TestWKNativeLibrary.INSTANCE.runRlpTests();
     }
 
     @Test
-    public void testEthereumUtil () {
+    public void testSupportUtil () {
         TestWKNativeLibrary.INSTANCE.runUtilTests();
     }
 
-    @Test
-    public void testEthereumEvent () {
-        TestWKNativeLibrary.INSTANCE.runEventTests ();
-    }
+    // Ethereum
 
     @Test
     public void testEthereumBase () {
@@ -308,8 +315,13 @@ public class WKNativeLibraryIT {
     }
 
     @Test
-    public void testEthereumBasics() {
-        TestWKNativeLibrary.INSTANCE.runTests(0);
+    public void testEthereumTransaction() {
+        TestWKNativeLibrary.INSTANCE.runTransactionTests(0);
+    }
+
+    @Test
+    public void testEthereumStructure() {
+        TestWKNativeLibrary.INSTANCE.runStructureTests();
     }
 
 // REFACTOR
@@ -516,13 +528,20 @@ public class WKNativeLibraryIT {
         void runCryptoTests();
         int runWalletKitTestsWithAccountAndNetwork(WKAccount account, WKNetwork network, String storagePath);
 
+        // Support
+        void runEventTests();
+        void runJsonTests();
         void runUtilTests();
         void runRlpTests();
-        void runEventTests();
+
+        // Ethereum
         void runBaseTests();
         void runBcTests();
+        void runTransactionTests(int reallySend);
         void runContractTests();
-        void runTests(int reallySend);
+        void runStructureTests();
+        void runBasicsTests();
+
         void runEWMTests(String paperKey, String storagePath);
         void runLESTests(String paperKey);
         void runNodeTests();

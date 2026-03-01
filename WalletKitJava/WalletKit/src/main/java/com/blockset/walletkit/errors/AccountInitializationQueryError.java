@@ -7,16 +7,14 @@
  */
 package com.blockset.walletkit.errors;
 
-import com.blockset.walletkit.errors.QueryError;
-
 public final class AccountInitializationQueryError extends AccountInitializationError {
-    QueryError queryError;
+    SystemClientError systemClientError;
 
-    public AccountInitializationQueryError(QueryError queryError) {
-        this.queryError = queryError;
+    public AccountInitializationQueryError(SystemClientError systemClientError) {
+        this.systemClientError = systemClientError;
     }
 
-    public QueryError getQueryError() {
-        return queryError;
+    public SystemClientError getQueryError() {
+        return systemClientError;
     }
 }

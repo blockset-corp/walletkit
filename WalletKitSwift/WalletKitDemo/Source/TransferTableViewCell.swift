@@ -44,7 +44,7 @@ class TransferTableViewCell: UITableViewCell {
         case .created: return UIColor.gray
         case .submitted: return UIColor.yellow
         case .included (let confirmation):
-            return confirmation.success ? UIColor.green : UIColor.red
+            return confirmation.succeeded ? UIColor.green : UIColor.red
         case .deleted: return UIColor.black
 
         case .signed: return UIColor.yellow

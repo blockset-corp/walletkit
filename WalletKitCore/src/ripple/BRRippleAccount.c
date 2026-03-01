@@ -34,7 +34,7 @@
 
 #define RIPPLE_SEQUENCE_PROTOCOL_CHANGE_BLOCK 55313921
 
-#define RIPPLE_ACCOUNT_MINIMUM_IN_XRP            (20)
+#define RIPPLE_ACCOUNT_MINIMUM_IN_XRP            (10)
 
 struct BRRippleAccountRecord {
     BRRippleAddress address; // The 20 byte account id
@@ -271,3 +271,25 @@ rippleAccountGetDefaultFeeBasis (BRRippleAccount account) {
         10, 1
     };
 }
+
+extern BRRippleFeeBasis
+rippleAccountGetAccountDeleteFeeBasis (BRRippleAccount account) {
+    return (BRRippleFeeBasis) {
+        5000000, 1
+    };
+}
+
+extern BRRippleTransaction
+rippleAccountCreateCloseTransaction(BRRippleAccount account,
+                                    BRRippleAddress toAddress,
+                                    BRRippleFeeBasis feeBasis)
+{
+    // Get the source address
+    BRRippleAddress sourceAddress = rippleAccountGetAddress(account);
+    BRRippleTransaction tx = rippleTransactionCreateCloseTransaction(sourceAddress,
+                                                                     toAddress,
+                                                                     feeBasis);
+    rippleAddressFree(sourceAddress);
+    return tx;
+}
+

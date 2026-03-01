@@ -8,6 +8,7 @@
 //  See the LICENSE file at the project root for license information.
 //  See the CONTRIBUTORS file at the project root for a list of contributors.
 //
+
 #include "WKETH.h"
 
 #include "walletkit/WKAmountP.h"
@@ -19,6 +20,8 @@
 #include "walletkit/WKWalletManagerP.h"
 
 #include <ctype.h>
+
+#include <strings.h>
 
 // MARK: - Forward Declarations
 
@@ -70,7 +73,6 @@ wkWalletManagerCoerceETH (WKWalletManager manager) {
 }
 
 typedef struct {
-    BREthereumNetwork network;
     BREthereumAccount account;
     BRRlpCoder coder;
 } WKWalletManagerCreateContextETH;
@@ -81,7 +83,6 @@ wkWaleltMangerCreateCallbackETH (WKWalletManagerCreateContext context,
     WKWalletManagerCreateContextETH *contextETH = (WKWalletManagerCreateContextETH*) context;
     WKWalletManagerETH managerETH = wkWalletManagerCoerceETH (manager);
 
-    managerETH->network = contextETH->network;
     managerETH->account = contextETH->account;
     managerETH->coder   = contextETH->coder;
 }
@@ -95,9 +96,7 @@ wkWalletManagerCreateETH (WKWalletManagerListener listener,
                               WKAddressScheme scheme,
                               const char *path) {
     WKWalletManagerCreateContextETH contextETH = {
-        wkNetworkAsETH (network),
-        (BREthereumAccount) wkAccountAs (account,
-                                         WK_NETWORK_TYPE_ETH),
+        (BREthereumAccount) wkAccountAs (account, WK_NETWORK_TYPE_ETH),
         rlpCoderCreate()
     };
 
@@ -167,7 +166,7 @@ wkWalletManagerSignTransactionETH (WKWalletManager manager,
     WKTransferETH      transferETH = wkTransferCoerceETH      (transfer);
 
 
-    BREthereumNetwork     ethNetwork     = managerETH->network;
+    BREthereumNetwork     ethNetwork     = wkWalletManagerGetNetworkAsETH(manager);
     BREthereumAccount     ethAccount     = managerETH->account;
     BREthereumAddress     ethAddress     = ethAccountGetPrimaryAddress (ethAccount);
     BREthereumTransaction ethTransaction = transferETH->originatingTransaction;

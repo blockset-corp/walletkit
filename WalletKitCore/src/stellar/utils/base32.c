@@ -80,9 +80,9 @@ static int decode_char(unsigned char c)
 	char retval = (char) -1;
 
 	if (c >= 'A' && c <= 'Z')
-		retval = c - 'A';
+		retval = (char) (c - 'A');
 	if (c >= '2' && c <= '7')
-		retval = c - '2' + 26;
+		retval = (char) (c - '2' + 26);
 
 	assert(retval == ((char) -1) || ((retval & 0x1F) == retval));
 

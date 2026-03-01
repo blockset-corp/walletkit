@@ -152,7 +152,7 @@ static _BRAuxPow *_BRAuxPowParse(const uint8_t *buf, size_t bufLen, UInt256 bloc
         o = (ap->coinbaseTx) ? o + btcTransactionSerialize(ap->coinbaseTx, NULL, 0) : bufLen;
         if (o + sizeof(UInt256) <= bufLen) ap->parentHash = UInt256Get(&buf[o]);
         o += sizeof(UInt256);
-        ap->cbHashesCount = BRVarInt(&buf[o], (o <= bufLen ? bufLen - o : 0), &len);
+        ap->cbHashesCount = (size_t) BRVarInt(&buf[o], (o <= bufLen ? bufLen - o : 0), &len);
         o += len;
         len = ap->cbHashesCount*sizeof(UInt256);
         ap->cbHashes = (o + len <= bufLen) ? malloc(len) : NULL;
@@ -160,7 +160,7 @@ static _BRAuxPow *_BRAuxPowParse(const uint8_t *buf, size_t bufLen, UInt256 bloc
         o += len;
         if (o + sizeof(uint32_t) <= bufLen) ap->cbMask = UInt32GetLE(&buf[o]);
         o += sizeof(uint32_t);
-        ap->chainHashesCount = BRVarInt(&buf[o], (o <= bufLen ? bufLen - o : 0), &len);
+        ap->chainHashesCount = (size_t) BRVarInt(&buf[o], (o <= bufLen ? bufLen - o : 0), &len);
         o += len;
         len = ap->chainHashesCount*sizeof(UInt256);
         ap->chainHashes = (o + len <= bufLen) ? malloc(len) : NULL;

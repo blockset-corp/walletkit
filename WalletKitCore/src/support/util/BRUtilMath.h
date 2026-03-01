@@ -11,6 +11,7 @@
 #ifndef BR_Util_Math_H
 #define BR_Util_Math_H
 
+#include "support/BROSCompat.h"
 #include "support/BRInt.h"
 
 #ifdef __cplusplus
@@ -256,6 +257,12 @@ uint256LE (UInt256 x, UInt256 y) {
  */
 extern int
 uint256Compare (UInt256 x, UInt256 y);
+
+/**
+ * Returns the twos-complement of `value`, perhaps.
+ */
+extern UInt256
+uint256Negate (UInt256 value);
 
 //
 // Parsing

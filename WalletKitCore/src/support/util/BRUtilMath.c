@@ -308,3 +308,16 @@ uint256CoerceLongDouble (UInt256 value, int *overflow) {
     *overflow = !isfinite(result);
     return result;
 }
+
+/**
+ * Returns the twos-complement of `value`, perhaps.
+ */
+extern UInt256
+uint256Negate (UInt256 value) {
+    UInt256 inverted = ((UInt256) { .u64 = { ~value.u64[0], ~value.u64[1], ~value.u64[2], ~value.u64[3] }});
+    UInt256 one      = ((UInt256) { .u64 = { 1, 0, 0, 0 }});
+
+    int overflow;
+    return uint256Add_Overflow (inverted, one, &overflow);
+}
+

@@ -75,9 +75,9 @@ tezosAccountFree (BRTezosAccount account)
 
 // MARK: - Signing
 
-extern WKData
+extern BRData
 tezosAccountSignData (BRTezosAccount account,
-                      WKData data,
+                      BRData data,
                       UInt512 seed) {
     BRKey publicKey  = tezosPublicKeyGetKey (account->publicKey);
     BRKey privateKey = deriveTezosPrivateKeyFromSeed(seed, 0);
@@ -87,7 +87,7 @@ tezosAccountSignData (BRTezosAccount account,
     uint8_t watermark[] = { 0x03 };
     size_t watermarkSize = sizeof(watermark);
     
-    WKData watermarkedData = wkDataNew(data.size + watermarkSize);
+    BRData watermarkedData = dataNew(data.size + watermarkSize);
     
     memcpy(watermarkedData.bytes, watermark, watermarkSize);
     memcpy(&watermarkedData.bytes[watermarkSize], data.bytes, data.size);
@@ -95,11 +95,11 @@ tezosAccountSignData (BRTezosAccount account,
     uint8_t hash[32];
     blake2b(hash, sizeof(hash), NULL, 0, watermarkedData.bytes, watermarkedData.size);
     
-    WKData signature = wkDataNew(64);
+    BRData signature = dataNew(64);
     ed25519_sign(signature.bytes, hash, sizeof(hash), publicKey.pubKey, privateKeyBytes);
     
     mem_clean(privateKeyBytes, 64);
-    wkDataFree(watermarkedData);
+    dataFree(watermarkedData);
     
     return signature;
 }

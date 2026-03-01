@@ -34,6 +34,7 @@ WKHandlers wkHandlersXTZ = {
     NULL,//WKWalletSweeperHandlers not supported
     NULL,//WKExportablePaperWalletHandlers
     NULL,//WKPaymentProtocolHandlers not supported
+    NULL,//WKWalletConnector
     &wkFeeBasisHandlersXTZ,
     &wkWalletManagerHandlersXTZ
 };

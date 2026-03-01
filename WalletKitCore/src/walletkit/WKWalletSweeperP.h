@@ -74,4 +74,8 @@ wkWalletSweeperAllocAndInit (size_t sizeInBytes,
                                  WKUnit unit);
 
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* WKWalletSweeperP_h */

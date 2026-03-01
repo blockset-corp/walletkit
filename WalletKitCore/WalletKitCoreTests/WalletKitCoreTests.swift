@@ -159,15 +159,25 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
-    // MARK: - Ethereum
+    func testBTCWalletManager() {
+        runBTCWalletManagerTests();
+    }
+    
+    // MARK: - Support
 
-    func testRLPETH () {
+    func testJSONSUP () {
+        runJsonTests()
+    }
+
+    func testRLPSUP () {
         runRlpTests()
     }
 
-    func testUtilETH () {
+    func testUtilSUP () {
         runUtilTests()
     }
+
+    // MARK: - Ethereum
 
     func testEventETH () {
         runEventTests ()
@@ -181,12 +191,16 @@ final class WalletKitCoreTests: XCTestCase {
         runBcTests()
     }
 
+    func testTransactionETH () {
+        runTransactionTests (0)
+    }
+
     func testContractETH () {
         runContractTests()
     }
 
-    func testBasicsETH () {
-        runTests (0)
+    func testStructureETH () {
+        runStructureTests()
     }
 
     // MARK: - Ripple
@@ -222,7 +236,7 @@ final class WalletKitCoreTests: XCTestCase {
         XCTAssert(1 == BRRunTests())
 //        XCTAssert(1 == BRRunTestsBWM (paperKey, storagePath, bitcoinChain, (isMainnet ? 1 : 0)));
     }
-
+    
     func testBitcoinSyncOne() {
         BRRunTestsSync (paperKey, bitcoinChain, (isMainnet ? 1 : 0));
     }
@@ -302,6 +316,11 @@ final class WalletKitCoreTests: XCTestCase {
         }
     }
 
+    // MARK: - WalletConnect 1.0
+    func testWalletConnect() {
+        runWalletConnectTests();
+    }
+    
     private func createBitcoinNetwork(isMainnet: Bool, blockHeight: UInt64) -> WKNetwork {
         let uids = "bitcoin-" + (isMainnet ? "mainnet" : "testnet")
         let network = wkNetworkFindBuiltin(uids, isMainnet);
@@ -440,15 +459,20 @@ final class WalletKitCoreTests: XCTestCase {
         ("testWalletKitBTC",    testWalletKitWithAccountAndNetworkBTC),
         ("testWalletKitBCH",    testWalletKitWithAccountAndNetworkBCH),
         ("testWalletKitETH",    testWalletKitWithAccountAndNetworkETH),
+        ("testBTCWalletManager", testBTCWalletManager),
+
+        // Support
+        ("testRLP",             testRLPSUP),
+        ("testUtil",            testUtilSUP),
+        ("testJSON",            testJSONSUP),
 
         // Ethereum
-        ("testRLP",             testRLPETH),
-        ("testUtil",            testUtilETH),
         ("testEvent",           testEventETH),
         ("testBase",            testBaseETH),
         ("testBC",              testBlockchainETH),
-        ("testContracdt",       testContractETH),
-        ("testBasics",          testBasicsETH),
+        ("testTransactions",    testTransactionETH),
+        ("testContract",        testContractETH),
+        ("testStructure",       testStructureETH),
 
         // Ripple
         ("testRipple",          testRipple),
@@ -466,6 +490,9 @@ final class WalletKitCoreTests: XCTestCase {
         ("testSupportBTC",      testBitcoinSupport),
         ("testBTC",             testBitcoin),
         ("testSyncOneBTC",      testBitcoinSyncOne),
+        
+        // WalletConnect 1.0 Handler
+        ("testWalletConnect",   testWalletConnect),
 //        ("testManaagerSyncBTC", testBitcoinWalletManagerSync)
         
         // __NEW_BLOCKCHAIN_TEST__

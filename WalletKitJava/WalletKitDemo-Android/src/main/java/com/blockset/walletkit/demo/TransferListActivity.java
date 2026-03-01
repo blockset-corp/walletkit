@@ -43,6 +43,7 @@ import com.blockset.walletkit.PaymentProtocolRequestType;
 import com.blockset.walletkit.System;
 import com.blockset.walletkit.Transfer;
 import com.blockset.walletkit.TransferConfirmation;
+import com.blockset.walletkit.TransferIncludeStatus;
 import com.blockset.walletkit.TransferState;
 import com.blockset.walletkit.Wallet;
 import com.blockset.walletkit.WalletManager;
@@ -91,6 +92,7 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
 
     private Wallet wallet;
     private boolean isBitcoin;
+    private boolean isEthereum;
     private Adapter transferAdapter;
     private ClipboardManager clipboardManager;
     private ArrayList<PaymentProtocolRequestType> availablePaymentProtocols = new ArrayList();
@@ -119,6 +121,7 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
         String currencyCode = wallet.getCurrency().getCode().toLowerCase();
         NetworkType networkType = net.getType();
         isBitcoin = NetworkType.BTC == networkType || NetworkType.BCH == networkType;
+        isEthereum = NetworkType.ETH == networkType;
         clipboardManager = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
         // Send currency must be contingent on available funds
@@ -202,12 +205,16 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_transfer_list, menu);
         menu.findItem(R.id.action_connect_with_peer).setVisible(isBitcoin);
+        menu.findItem(R.id.action_walletconnect).setVisible(isEthereum);
         return super.onCreateOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+            case R.id.action_walletconnect:
+                WalletConnectorSessionsActivity.start(this, this.wallet);
+                return true;
             case R.id.action_connect:
                 connect();
                 return true;
@@ -505,7 +512,10 @@ public class TransferListActivity extends AppCompatActivity implements DefaultSy
             this.stateText = Suppliers.memoize(() -> {
                 String text = String.format("State: %s", state());
                 return confirmation().transform((c) -> text +
-                        (c.getSuccess() ? "" : String.format(" (%s)", c.getError().or("<err>"))))
+                        (c.getStatus().type == TransferIncludeStatus.Type.SUCCESS
+                                ? ""
+                                : String.format(" %s: (%s)",
+                                c.getStatus().type, c.getStatus().details)))
                         .or(text);
             });
             this.dateText = Suppliers.memoize(() -> confirmation()

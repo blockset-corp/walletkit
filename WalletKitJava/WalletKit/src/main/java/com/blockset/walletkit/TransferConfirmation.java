@@ -21,16 +21,18 @@ public final class TransferConfirmation {
     private final UnsignedLong transactionIndex;
     private final Date timestamp;
     private final Optional<Amount> fee;
-    private final boolean success;
-    private final Optional<String> error;
+    private final TransferIncludeStatus status;
 
-    public TransferConfirmation(UnsignedLong blockNumber, UnsignedLong transactionIndex, UnsignedLong timestamp, Optional<Amount> fee, boolean success, Optional<String> error) {
+    public TransferConfirmation(UnsignedLong blockNumber,
+                                UnsignedLong transactionIndex,
+                                UnsignedLong timestamp,
+                                Optional<Amount> fee,
+                                TransferIncludeStatus status) {
         this.blockNumber = blockNumber;
         this.transactionIndex = transactionIndex;
         this.timestamp = new Date(TimeUnit.SECONDS.toMillis(timestamp.longValue()));
         this.fee = fee;
-        this.success = success;
-        this.error = error;
+        this.status = status;
     }
 
     public UnsignedLong getBlockNumber() {
@@ -49,11 +51,7 @@ public final class TransferConfirmation {
         return fee;
     }
 
-    public boolean getSuccess() {
-        return success;
-    }
-
-    public Optional<String> getError() {
-        return error;
+    public TransferIncludeStatus getStatus() {
+        return status;
     }
 }

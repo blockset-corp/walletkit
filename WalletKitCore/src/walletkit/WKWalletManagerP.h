@@ -191,6 +191,9 @@ struct WKWalletManagerRecord {
     WKClientSync canSync;
     WKClientSend canSend;
 
+    unsigned int clientErrorCount;
+    unsigned int clientErrorLimit;
+
     /// The primary wallet
     WKWallet wallet;
 
@@ -304,6 +307,10 @@ wkWalletManagerRecoverFeeBasisFromFeeEstimate (WKWalletManager cwm,
                                                size_t attributesCount,
                                                OwnershipKept const char **attributeKeys,
                                                OwnershipKept const char **attributeVals);
+
+private_extern void
+wkWalletManagerAnnounceClientError (WKWalletManager manager,
+                                    OwnershipGiven WKClientError error);
 
 static inline void
 wkWalletManagerGenerateEvent (WKWalletManager manager,

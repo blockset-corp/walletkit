@@ -45,9 +45,10 @@ struct WKTransferStateRecord {
             uint64_t timestamp;
             WKFeeBasis feeBasis;
 
-            // transfer that has failed can be included too
-            WKBoolean success;
-            char error[WK_TRANSFER_INCLUDED_ERROR_SIZE + 1];
+            /// The included status; generally with type WK_TRANSFER_INCLUDE_STATUS_SUCCESS.  A few
+            /// blockchains, notably Ethereum, can include a transaction on a failure, such as where
+            ///  'gas' is paid in the fee (but the 'gas' wasn't enough to complete the transfer).
+            WKTransferIncludeStatus status;
         } included;
 
         struct {

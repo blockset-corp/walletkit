@@ -81,10 +81,19 @@ typedef struct {
 } BREthereumSignature;
 
 extern BREthereumSignature
+ethSignatureCreateFromDigest (BREthereumSignatureType type,
+                              BREthereumHash digest,
+                              BRKey privateKey);
+
+/**
+ * Optionally fill `digest` with the digest of bytes
+ */
+extern BREthereumSignature
 ethSignatureCreate (BREthereumSignatureType type,
-                    uint8_t *bytes,
+                    const uint8_t *bytes,
                     size_t bytesCount,
-                    BRKey privateKeyUncompressed);
+                    BRKey privateKey,
+                    BREthereumHash *digest);
 
 extern BREthereumAddress
 ethSignatureExtractAddress (const BREthereumSignature signature,

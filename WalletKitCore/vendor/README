@@ -14,3 +14,8 @@ git commit -m 'Update secp256k1 to <commit>'
 # ed25519 - see https://github.com/orlp/ed25519
 #
 # blake2 - see https://github.com/blockset-corp/blake2_mjosref
+#
+# yajl - see git@github.com:lloyd/yajl.git
+#  ./configure
+#  Copy over .../src
+#            .../build/yajl-2.1.1/include

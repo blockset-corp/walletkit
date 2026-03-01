@@ -408,7 +408,7 @@ ethTransactionRlpEncode(BREthereumTransaction transaction,
             }
             break;
     }
-    
+
     BRRlpItem result = rlpEncodeListItems(coder, items, itemsCount);
 
     if (RLP_TYPE_TRANSACTION_SIGNED == type) {

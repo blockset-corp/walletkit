@@ -31,6 +31,7 @@
 #include "BREthereumData.h"
 #include "BREthereumAddress.h"
 #include "BREthereumSignature.h"
+#include "BREthereumStructure.h"
 
 #ifdef __cplusplus
 extern "C" {

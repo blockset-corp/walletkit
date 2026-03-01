@@ -149,10 +149,10 @@ tezosOperationFree (BRTezosOperation operation);
 extern BRTezosOperation
 tezosOperationClone (Nullable BRTezosOperation operation);
 
-extern WKData
+extern BRData
 tezosOperationSerialize (BRTezosOperation operation);
 
-extern WKData
+extern BRData
 tezosOperationSerializeList (BRTezosOperation * operations,
                              size_t operationsCount,
                              BRTezosHash blockHash);

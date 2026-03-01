@@ -18,6 +18,11 @@
 extern "C" {
 #endif
 
+typedef struct {
+    uint8_t data[128/8];        // 16 bytes
+} WKPeerAddrAsInt;
+
+
 /**
  * @brief A Peer as a remote host that can be used for peer-to-peer sync modes
  *
@@ -37,7 +42,7 @@ wkPeerCreate (WKNetwork network,
 /**
  * The peer's address as 16 bytes.
  */
-extern WKData16
+extern WKPeerAddrAsInt
 wkPeerGetAddrAsInt (WKPeer peer);
 
 /**

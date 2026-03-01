@@ -5,6 +5,9 @@ android {
     compileSdkVersion androidConfig.compileSdkVersion
 
     compileOptions {
+        // Flag to enable support for the new language APIs
+        coreLibraryDesugaringEnabled true
+
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
@@ -56,8 +59,14 @@ dependencies {
     implementation deps.jacksonDatabind
     implementation deps.jacksonDatabindGuava
 
+    // For AES-256-CBC and HMAC-SHA256 support required for
+    // Wallet Connect 1.0
+    implementation deps.bouncyCastle
+
     testImplementation deps.junit
 
     androidTestImplementation deps.androidxTestRunner
     androidTestImplementation deps.androidxTestEspresso
+
+    coreLibraryDesugaring deps.desugar
 }

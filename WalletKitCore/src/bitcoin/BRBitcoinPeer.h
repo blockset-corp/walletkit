@@ -29,6 +29,7 @@
 #include "BRBitcoinMerkleBlock.h"
 #include "support/BRAddress.h"
 #include "support/BRInt.h"
+#include "support/BROSCompat.h"
 #include <stddef.h>
 #include <inttypes.h>
 

@@ -126,12 +126,17 @@ ethTransactionStatusHasType (const BREthereumTransactionStatus *status,
 }
 
 extern int
-ethTransactionStatusExtractIncluded(const BREthereumTransactionStatus *status,
-                                 BREthereumHash *blockHash,
-                                 uint64_t *blockNumber,
-                                 uint64_t *blockTransactionIndex,
-                                 uint64_t *blockTimestamp,
-                                 BREthereumGas *gas);
+ethTransactionStatusExtractIncluded (const BREthereumTransactionStatus *status,
+                                     BREthereumHash *blockHash,
+                                     uint64_t *blockNumber,
+                                     uint64_t *blockTransactionIndex,
+                                     uint64_t *blockTimestamp,
+                                     BREthereumGas *gas,
+                                     uint64_t *success);
+extern int
+ethTransactionStatusExtractErrored (const BREthereumTransactionStatus *status,
+                                    BREthereumTransactionErrorType *type,
+                                    char **detail);
 
 extern BREthereumBoolean
 ethTransactionStatusEqual (BREthereumTransactionStatus ts1,

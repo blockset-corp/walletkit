@@ -242,14 +242,20 @@ public class WKSystem extends PointerType {
         WKNativeLibraryDirect.wkSystemDisconnect(thisPtr);
     }
 
-    public void announceCurrencies(List<WKClientCurrencyBundle> bundles) {
+     public void announceCurrenciesSuccess(List<WKClientCurrencyBundle> bundles) {
         int bundlesCount = bundles.size();
         WKClientCurrencyBundle[] bundlesArr = bundles.toArray(new WKClientCurrencyBundle[bundlesCount]);
 
-        WKNativeLibraryIndirect.wkClientAnnounceCurrencies(
+        WKNativeLibraryIndirect.wkClientAnnounceCurrenciesSuccess(
                 this.getPointer(),
                 bundlesArr,
                 new SizeT(bundlesCount));
+    }
+
+    public void announceCurrenciesFailure(WKClientError error) {
+         WKNativeLibraryIndirect.wkClientAnnounceCurrenciesFailure(
+                this.getPointer(),
+                error.getPointer());
     }
 
     public WKSystem take() {

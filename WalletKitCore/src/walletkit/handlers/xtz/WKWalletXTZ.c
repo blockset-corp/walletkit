@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <strings.h>
 
 static WKWalletXTZ
 wkWalletCoerce (WKWallet wallet) {

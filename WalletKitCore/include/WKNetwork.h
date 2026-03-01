@@ -306,19 +306,6 @@ wkNetworkGetUnitAt (WKNetwork network,
                     WKCurrency currency,
                     size_t index);
 
-/**
- * Get the network's count of network fees.
- */
-extern size_t
-wkNetworkGetNetworkFeeCount (WKNetwork network);
-
-/**
- * Get the network fee at `index` from among the network's fees
- */
-extern WKNetworkFee
-wkNetworkGetNetworkFeeAt (WKNetwork network,
-                          size_t index);
-
 /*
  * Get all the network's fee and fill `count` with the number of fees.
  */

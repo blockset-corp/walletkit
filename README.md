@@ -250,6 +250,16 @@ WalletKit can be started in Android Studio using ...
 The `cmake` file 'WalletKitCore/CMakeLists.txt' can be used to build all of the C code into  
 `libWalletKitCore.so` which can then be linked into an exectuable.
 
+A `Makefile` located within WalletKitCore can be used to build natively
+for either:
+
+- Darwin/Clang
+- GNU/Linux
+
+The WalletKit shared library can be built via `make libs`, and shared libraries and test applications can be built via `make tests`. Cmake will select the toolchain appropriately, or the compiler toolchain can be selected specifically via `export CC=gcc;make tests` for example.
+
+Build output goes to the `build` folder.
+
 # Framework Use
 
 `WalletKit` is delivered as a framework and is designed to be embedded in another 

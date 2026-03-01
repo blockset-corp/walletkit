@@ -34,6 +34,7 @@ WKHandlers wkHandlersBTC = {
     &wkWalletSweeperHandlersBTC,
     &wkExportablePaperWalletHandlersBTC,
     &wkPaymentProtocolHandlersBTC,
+    NULL,//WKWalletConnector
     &wkFeeBasisHandlersBTC,
     &wkWalletManagerHandlersBTC
 };
@@ -61,6 +62,7 @@ WKHandlers wkHandlersBCH = {
     &wkWalletSweeperHandlersBCH,
     NULL,//WKExportablePaperWalletHandlers
     &wkPaymentProtocolHandlersBTC,
+    NULL,//WKWalletConnector
     &wkFeeBasisHandlersBTC,
     &wkWalletManagerHandlersBCH
 };
@@ -86,8 +88,9 @@ WKHandlers wkHandlersBSV = {
     &wkTransferHandlersBSV,
     &wkWalletHandlersBSV,
     &wkWalletSweeperHandlersBSV,
-    NULL, // WKExportablePaperWalletHandlers
-    NULL, // WKPaymentProtocolHandlers,
+    NULL,//WKExportablePaperWalletHandlers
+    NULL,//WKPaymentProtocolHandlers,
+    NULL,//WKWalletConnector
     &wkFeeBasisHandlersBTC,
     &wkWalletManagerHandlersBSV
 };
@@ -115,6 +118,7 @@ WKHandlers wkHandlersLTC = {
     &wkWalletSweeperHandlersLTC,
     NULL,//WKExportablePaperWalletHandlers
     &wkPaymentProtocolHandlersBTC,
+    NULL,//WKWalletConnector
     &wkFeeBasisHandlersBTC,
     &wkWalletManagerHandlersLTC
 };
@@ -142,6 +146,7 @@ WKHandlers wkHandlersDOGE = {
     &wkWalletSweeperHandlersDOGE,
     NULL,//WKExportablePaperWalletHandlers
     &wkPaymentProtocolHandlersBTC,
+    NULL,//WKWalletConnector
     &wkFeeBasisHandlersBTC,
     &wkWalletManagerHandlersDOGE
 };
